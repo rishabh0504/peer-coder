@@ -1,32 +1,47 @@
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools";
 import { defaultToolRuntime } from "@runtime/tool_runtime.js";
+import { ToolExecutionError } from "@utils/errors.js";
+import type { WorkspaceContext } from "@workspace/workspace_context.js";
 import { z } from "zod";
 
 const execAsync = promisify(exec);
 
 export const gitDiffInputSchema = z.object({
-  target: z.string().optional().describe("Commit or branch target to diff against"),
+  path: z.string().optional().describe("Specific target file path for git diff"),
 });
 
 export const gitDiffTool = tool(
-  async (input) => {
-    const response = await defaultToolRuntime.execute("git_diff", input, async (context, args) => {
-      const cmd = args.target ? `git diff ${args.target}` : "git diff";
-      const { stdout } = await execAsync(cmd, { cwd: context.workspaceRoot });
-      return { diff: stdout.trim() };
-    });
+  async (input, config?: RunnableConfig) => {
+    const contextOverride = config?.configurable?.workspaceContext as WorkspaceContext | undefined;
+    const response = await defaultToolRuntime.execute(
+      "git_diff",
+      input,
+      async (context, args) => {
+        const targetPath = args.path ? ` -- "${args.path}"` : "";
+        const { stdout } = await execAsync(`git diff${targetPath}`, { cwd: context.workspaceRoot });
+        return {
+          diff: stdout.trim(),
+        };
+      },
+      contextOverride,
+    );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error?.message || "Failed to execute git diff.");
+      throw new ToolExecutionError(
+        response.error?.message || "Failed to get git diff.",
+        "git_diff",
+        response.error?.code || "EXECUTION_ERROR",
+      );
     }
 
     return JSON.stringify(response.data);
   },
   {
     name: "git_diff",
-    description: "Get repository git diff changes.",
+    description: "Inspect uncommitted working directory git diffs.",
     schema: gitDiffInputSchema,
   },
 );

@@ -1,5 +1,8 @@
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools";
 import { defaultToolRuntime } from "@runtime/tool_runtime.js";
+import { ToolExecutionError } from "@utils/errors.js";
+import type { WorkspaceContext } from "@workspace/workspace_context.js";
 import { z } from "zod";
 
 export const webSearchInputSchema = z.object({
@@ -89,7 +92,8 @@ export async function searchDuckDuckGo(query: string, maxResults = 5): Promise<S
 }
 
 export const webSearchTool = tool(
-  async (input) => {
+  async (input, config?: RunnableConfig) => {
+    const contextOverride = config?.configurable?.workspaceContext as WorkspaceContext | undefined;
     const response = await defaultToolRuntime.execute(
       "web_search",
       input,
@@ -101,10 +105,15 @@ export const webSearchTool = tool(
           results,
         };
       },
+      contextOverride,
     );
 
     if (!response.success || !response.data) {
-      throw new Error(response.error?.message || "Failed to perform web search.");
+      throw new ToolExecutionError(
+        response.error?.message || "Failed to perform web search.",
+        "web_search",
+        response.error?.code || "EXECUTION_ERROR",
+      );
     }
 
     return JSON.stringify(response.data);
