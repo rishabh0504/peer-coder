@@ -4,55 +4,73 @@ import { getSystemPrompt } from "@prompts/system.js";
 import { executeToolCall } from "@tools/executor.js";
 import { startAgentSpinner, stopAgentSpinner } from "@utils/spinner.js";
 import { parseToolCall } from "@utils/tool-parser.js";
+import chalk from "chalk";
 import { chatStream } from "./index.js";
 
-export const interact = async (userPrompt: string) => {
+export interface InteractOptions {
+  maxSteps?: number;
+}
+
+export const interact = async (userPrompt: string, options: InteractOptions = {}) => {
+  const maxSteps = options.maxSteps ?? 10;
   const messages: BaseMessage[] = [
     new SystemMessage(getSystemPrompt()),
     new HumanMessage(userPrompt),
   ];
 
-  startAgentSpinner("Thinking", "reasoning over prompt");
+  let stepCount = 0;
 
-  let firstTokenReceived = false;
-  let accumulatedContent = "";
-  const nativeToolCalls: Array<{ id?: string; name: string; args?: Record<string, unknown> }> = [];
+  while (stepCount < maxSteps) {
+    stepCount++;
+    startAgentSpinner("Thinking", `reasoning over prompt (step ${stepCount}/${maxSteps})`);
 
-  try {
-    const stream = await chatStream(messages);
+    let firstTokenReceived = false;
+    let accumulatedContent = "";
+    const nativeToolCalls: Array<{ id?: string; name: string; args?: Record<string, unknown> }> =
+      [];
 
-    for await (const chunk of stream) {
-      if (!firstTokenReceived) {
-        stopAgentSpinner(true);
-        firstTokenReceived = true;
-      }
+    try {
+      const stream = await chatStream(messages);
 
-      if (typeof chunk.content === "string" && chunk.content) {
-        accumulatedContent += chunk.content;
-        process.stdout.write(chunk.content);
-      }
+      for await (const chunk of stream) {
+        if (!firstTokenReceived) {
+          stopAgentSpinner(true);
+          firstTokenReceived = true;
+        }
 
-      if (chunk.tool_calls && chunk.tool_calls.length > 0) {
-        for (const tc of chunk.tool_calls) {
-          nativeToolCalls.push({
-            id: tc.id || `call_${Date.now()}`,
-            name: tc.name,
-            args: tc.args as Record<string, unknown>,
-          });
+        if (typeof chunk.content === "string" && chunk.content) {
+          accumulatedContent += chunk.content;
+          process.stdout.write(chunk.content);
+        }
+
+        if (chunk.tool_calls && chunk.tool_calls.length > 0) {
+          for (const tc of chunk.tool_calls) {
+            nativeToolCalls.push({
+              id: tc.id || `call_${Date.now()}`,
+              name: tc.name,
+              args: tc.args as Record<string, unknown>,
+            });
+          }
         }
       }
-    }
 
-    if (!firstTokenReceived) {
-      stopAgentSpinner(true);
-    }
+      if (!firstTokenReceived) {
+        stopAgentSpinner(true);
+      }
 
-    process.stdout.write("\n");
+      if (accumulatedContent.length > 0) {
+        process.stdout.write("\n");
+      }
 
-    // Parse tool invocation (native or fallback text)
-    const toolCall = parseToolCall(nativeToolCalls, accumulatedContent);
+      // Parse tool invocation (native or fallback text)
+      const toolCall = parseToolCall(nativeToolCalls, accumulatedContent);
 
-    if (toolCall) {
+      if (!toolCall) {
+        // No tool call requested -> agent response complete
+        break;
+      }
+
+      // Push AI message with tool calls
       const aiMessage = new AIMessage({
         content: accumulatedContent,
         tool_calls: [
@@ -66,11 +84,13 @@ export const interact = async (userPrompt: string) => {
       messages.push(aiMessage);
 
       // Execute tool call and append ToolMessage result
+      startAgentSpinner("Executing", `${chalk.cyan(toolCall.name)}`);
       const { message: toolMessage } = await executeToolCall(toolCall);
+
       messages.push(toolMessage);
+    } catch (err) {
+      stopAgentSpinner(false, "Failed during agent interaction step");
+      throw err;
     }
-  } catch (err) {
-    stopAgentSpinner(false, "Failed to generate response");
-    throw err;
   }
 };
