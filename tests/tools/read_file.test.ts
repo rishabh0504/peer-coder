@@ -132,4 +132,61 @@ describe("read_file Tool Edge Cases", () => {
       ),
     ).rejects.toThrow(/Security Error/);
   });
+
+  it("should read last line only", async () => {
+    const filePath = path.join(testDir, "last_line.txt");
+    await fs.writeFile(filePath, "Line 1\nLine 2\nLine 3\nLine 4\nLine 5", "utf-8");
+
+    const result = await readFileTool.invoke(
+      { path: filePath, startLine: 5, endLine: 5 },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.content).toBe("5 | Line 5");
+  });
+
+  it("should return JSON with exactly two keys: path and content", async () => {
+    const filePath = path.join(testDir, "shape.txt");
+    await fs.writeFile(filePath, "test content", "utf-8");
+
+    const result = await readFileTool.invoke(
+      { path: filePath },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    const keys = Object.keys(parsed);
+    expect(keys.length).toBe(2);
+    expect(keys).toContain("path");
+    expect(keys).toContain("content");
+  });
+
+  it("should read startLine = 1, endLine = total lines", async () => {
+    const filePath = path.join(testDir, "exact_bounds.txt");
+    await fs.writeFile(filePath, "A\nB\nC", "utf-8");
+
+    const result = await readFileTool.invoke(
+      { path: filePath, startLine: 1, endLine: 3 },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.content).toBe("1 | A\n2 | B\n3 | C");
+  });
+
+  it("should throw validation error when startLine = 0", async () => {
+    const filePath = path.join(testDir, "invalid_start.txt");
+    await fs.writeFile(filePath, "A\nB", "utf-8");
+
+    await expect(
+      readFileTool.invoke(
+        { path: filePath, startLine: 0, endLine: 2 },
+        { configurable: { workspaceContext: context } },
+      ),
+    ).rejects.toThrow();
+  });
+
+  it("should throw security error for absolute path outside workspace", async () => {
+    await expect(
+      readFileTool.invoke({ path: "/etc/hosts" }, { configurable: { workspaceContext: context } }),
+    ).rejects.toThrow(/Security Error/);
+  });
 });

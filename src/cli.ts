@@ -24,10 +24,7 @@ program
   .description("Start interactive REPL session")
   .action(async () => {
     try {
-      // If no subcommand/flag is passed, enter interactive REPL shell
-      if (process.argv.length <= 2) {
-        await startRepl();
-      }
+      await startRepl();
     } catch (err) {
       handleError(err);
     }
@@ -39,16 +36,21 @@ program.on("command:*", (commands) => {
   process.exit(1);
 });
 
-async function main() {
+export async function main(argv: string[] = process.argv) {
   try {
-    if (process.argv.length <= 2) {
+    if (argv.length <= 2) {
       await startRepl();
     } else {
-      await program.parseAsync(process.argv);
+      await program.parseAsync(argv);
     }
   } catch (err) {
     handleError(err);
   }
 }
 
-main();
+export { program };
+
+// Only run main automatically if not in a test environment
+if (process.env.NODE_ENV !== "test") {
+  main();
+}

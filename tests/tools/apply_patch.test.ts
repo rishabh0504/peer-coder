@@ -120,4 +120,63 @@ describe("apply_patch Tool Edge Cases", () => {
       ),
     ).rejects.toThrow(/Security Error/);
   });
+
+  it("should support line deletion by replacing with empty string", async () => {
+    const filePath = path.join(testDir, "delete_line.ts");
+    await fs.writeFile(filePath, "line 1\nline 2\nline 3", "utf-8");
+
+    await applyPatchTool.invoke(
+      { path: filePath, startLine: 2, endLine: 2, replacement: "" },
+      { configurable: { workspaceContext: context } },
+    );
+    const content = await fs.readFile(filePath, "utf-8");
+    expect(content).toBe("line 1\n\nline 3");
+  });
+
+  it("should return JSON with path and linesReplaced", async () => {
+    const filePath = path.join(testDir, "shape_check.ts");
+    await fs.writeFile(filePath, "line 1\nline 2", "utf-8");
+
+    const result = await applyPatchTool.invoke(
+      { path: filePath, startLine: 1, endLine: 2, replacement: "new" },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.path).toBe(filePath);
+    expect(parsed.linesReplaced).toBe(2);
+  });
+
+  it("should patch single-line file with startLine=endLine=1", async () => {
+    const filePath = path.join(testDir, "single_line.ts");
+    await fs.writeFile(filePath, "sole line", "utf-8");
+
+    await applyPatchTool.invoke(
+      { path: filePath, startLine: 1, endLine: 1, replacement: "updated sole line" },
+      { configurable: { workspaceContext: context } },
+    );
+    const content = await fs.readFile(filePath, "utf-8");
+    expect(content).toBe("updated sole line");
+  });
+
+  it("should throw error when endLine is beyond total lines", async () => {
+    const filePath = path.join(testDir, "beyond_bounds.ts");
+    await fs.writeFile(filePath, "line 1\nline 2", "utf-8");
+
+    await expect(
+      applyPatchTool.invoke(
+        { path: filePath, startLine: 1, endLine: 999, replacement: "new" },
+        { configurable: { workspaceContext: context } },
+      ),
+    ).rejects.toThrow(/Invalid endLine/);
+  });
+
+  it("should throw error when file does not exist", async () => {
+    const filePath = path.join(testDir, "non_existent.ts");
+    await expect(
+      applyPatchTool.invoke(
+        { path: filePath, startLine: 1, endLine: 1, replacement: "new" },
+        { configurable: { workspaceContext: context } },
+      ),
+    ).rejects.toThrow();
+  });
 });

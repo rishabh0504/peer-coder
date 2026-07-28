@@ -123,4 +123,51 @@ describe("list_files Tool Edge Cases", () => {
       listFilesTool.invoke({ path: "../.." }, { configurable: { workspaceContext: context } }),
     ).rejects.toThrow();
   });
+
+  it("should throw security error for absolute path outside workspace", async () => {
+    await expect(
+      listFilesTool.invoke({ path: "/etc" }, { configurable: { workspaceContext: context } }),
+    ).rejects.toThrow();
+  });
+
+  it("should validate return shape contains path, files, total", async () => {
+    const result = await listFilesTool.invoke(
+      { path: testDir, recursive: false },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.path).toBeDefined();
+    expect(Array.isArray(parsed.files)).toBe(true);
+    expect(typeof parsed.total).toBe("number");
+  });
+
+  it("should return empty list when listing empty directory", async () => {
+    const emptyDir = path.join(testDir, "empty_dir");
+    await fs.mkdir(emptyDir);
+
+    const result = await listFilesTool.invoke(
+      { path: emptyDir },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.files).toEqual([]);
+  });
+
+  it("should throw error when target path does not exist", async () => {
+    const missingDir = path.join(testDir, "missing_dir_xyz");
+    await expect(
+      listFilesTool.invoke({ path: missingDir }, { configurable: { workspaceContext: context } }),
+    ).rejects.toThrow();
+  });
+
+  it("should return single file even if recursive=true when target path is a file", async () => {
+    const filePath = path.join(testDir, "a.ts");
+    const result = await listFilesTool.invoke(
+      { path: filePath, recursive: true },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.files).toHaveLength(1);
+    expect(parsed.files[0]).toBe(path.relative(context.workspaceRoot, filePath));
+  });
 });

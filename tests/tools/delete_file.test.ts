@@ -45,4 +45,35 @@ describe("delete_file Tool Edge Cases", () => {
       ),
     ).rejects.toThrow(/Security Error/);
   });
+
+  it("should throw security error for absolute path outside workspace", async () => {
+    await expect(
+      deleteFileTool.invoke(
+        { path: "/etc/passwd" },
+        { configurable: { workspaceContext: context } },
+      ),
+    ).rejects.toThrow(/Security Error/);
+  });
+
+  it("should validate shape contains path and deleted", async () => {
+    const filePath = path.join(testDir, "shape_check.txt");
+    await fs.writeFile(filePath, "temp", "utf-8");
+
+    const result = await deleteFileTool.invoke(
+      { path: filePath },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.path).toBe(filePath);
+    expect(parsed.deleted).toBe(true);
+  });
+
+  it("should throw error when path is a directory", async () => {
+    const dirPath = path.join(testDir, "some_dir");
+    await fs.mkdir(dirPath);
+
+    await expect(
+      deleteFileTool.invoke({ path: dirPath }, { configurable: { workspaceContext: context } }),
+    ).rejects.toThrow();
+  });
 });

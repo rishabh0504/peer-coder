@@ -25,9 +25,27 @@ describe("src/tools Execution & Index Export Coverage", () => {
     expect(result.message).toBeDefined();
   });
 
+  it("should return valid JSON from executeToolCall output", async () => {
+    const result = await executeToolCall({
+      name: "workspace_info",
+      args: {},
+    });
+
+    expect(() => JSON.parse(result.output)).not.toThrow();
+  });
+
   it("should handle unregistered tool call gracefully", async () => {
     const result = await executeToolCall({
       name: "non_existent_tool",
+      args: {},
+    });
+
+    expect(result.output).toContain("is not registered");
+  });
+
+  it("should handle empty tool name gracefully", async () => {
+    const result = await executeToolCall({
+      name: "",
       args: {},
     });
 

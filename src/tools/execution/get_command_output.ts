@@ -6,7 +6,7 @@ import type { WorkspaceContext } from "@workspace/workspace_context.js";
 import { z } from "zod";
 
 export const getCommandOutputInputSchema = z.object({
-  processId: z.string().describe("Target process ID or handle"),
+  processId: z.string().min(1).describe("Target process ID or handle"),
 });
 
 export const getCommandOutputTool = tool(

@@ -6,7 +6,7 @@ import type { WorkspaceContext } from "@workspace/workspace_context.js";
 import { z } from "zod";
 
 export const findSymbolInputSchema = z.object({
-  symbol: z.string().describe("Target symbol name to locate"),
+  symbol: z.string().min(1).describe("Target symbol name to locate"),
 });
 
 export const findSymbolTool = tool(

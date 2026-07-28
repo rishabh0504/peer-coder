@@ -6,7 +6,7 @@ import type { WorkspaceContext } from "@workspace/workspace_context.js";
 import { z } from "zod";
 
 export const findReferencesInputSchema = z.object({
-  symbol: z.string().describe("Target symbol name to find references for"),
+  symbol: z.string().min(1).describe("Target symbol name to find references for"),
 });
 
 export const findReferencesTool = tool(

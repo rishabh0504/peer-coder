@@ -6,7 +6,7 @@ import type { WorkspaceContext } from "@workspace/workspace_context.js";
 import { z } from "zod";
 
 export const searchCodeInputSchema = z.object({
-  query: z.string().describe("Search query string or pattern"),
+  query: z.string().min(1).describe("Search query string or pattern"),
   path: z.string().default(".").describe("Directory path to search within"),
   recursive: z.boolean().default(true).describe("Search subdirectories recursively"),
 });

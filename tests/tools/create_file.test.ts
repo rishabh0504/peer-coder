@@ -94,4 +94,39 @@ describe("create_file Tool Edge Cases", () => {
       ),
     ).rejects.toThrow(/Security Error/);
   });
+
+  it("should throw security error for absolute path outside workspace", async () => {
+    await expect(
+      createFileTool.invoke(
+        { path: "/etc/passwd", content: "hack" },
+        { configurable: { workspaceContext: context } },
+      ),
+    ).rejects.toThrow(/Security Error/);
+  });
+
+  it("should validate return shape contains exactly path and bytesWritten", async () => {
+    const filePath = path.join(testDir, "shape_check.txt");
+    const result = await createFileTool.invoke(
+      { path: filePath, content: "test" },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    const keys = Object.keys(parsed);
+    expect(keys.length).toBe(2);
+    expect(keys).toContain("path");
+    expect(keys).toContain("bytesWritten");
+  });
+
+  it("should default overwrite to true when not provided", async () => {
+    const filePath = path.join(testDir, "default_overwrite.txt");
+    await fs.writeFile(filePath, "Original", "utf-8");
+
+    await createFileTool.invoke(
+      { path: filePath, content: "New Content" },
+      { configurable: { workspaceContext: context } },
+    );
+
+    const content = await fs.readFile(filePath, "utf-8");
+    expect(content).toBe("New Content");
+  });
 });
