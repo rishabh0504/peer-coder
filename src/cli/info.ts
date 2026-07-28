@@ -1,7 +1,7 @@
 import os from "node:os";
+import { loadEnv } from "@config/env.js";
 import boxen from "boxen";
 import picocolors from "picocolors";
-import { loadEnv } from "@config/env.js";
 
 export function infoCommand(): void {
   const env = loadEnv();

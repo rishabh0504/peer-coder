@@ -1,8 +1,8 @@
 import * as p from "@clack/prompts";
+import { logger } from "@utils/logger.js";
 import boxen from "boxen";
 import picocolors from "picocolors";
 import { z } from "zod";
-import { logger } from "@utils/logger.js";
 
 const projectSchema = z.object({
   name: z
