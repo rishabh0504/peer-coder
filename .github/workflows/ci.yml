@@ -1,8 +1,8 @@
 name: CI & Release Workflow
 
 on:
-  push:
-    branches: [main, master]
+  # push:
+  #   branches: [main, master]
   pull_request:
     branches: [main, master]
 
