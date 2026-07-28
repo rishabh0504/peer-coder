@@ -3,6 +3,7 @@ import { printBrandBanner } from "@cli/brand.js";
 import { infoCommand } from "@cli/info.js";
 import { logger } from "@utils/logger.js";
 import picocolors from "picocolors";
+import { interact } from "../integration/interact.js";
 
 const COMMANDS = ["/info", "/help", "/clear", "/exit"];
 
@@ -60,9 +61,14 @@ export async function startRepl(): Promise<void> {
       return;
     }
 
-    // Default AI prompt handler placeholder
-    console.log(`  ${picocolors.dim("Thinking...")}`);
-    logger.info(`Received prompt: "${input}"`);
+    // AI prompt streaming interaction
+    rl.pause();
+    try {
+      await interact(input);
+    } catch (err) {
+      logger.error(err instanceof Error ? err.message : String(err));
+    }
+    rl.resume();
     rl.prompt();
   });
 
