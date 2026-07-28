@@ -8,7 +8,7 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(["trace", "debug", "info", "warn", "error"]).default("info"),
 
   OLLAMA_HOST_LOCAL: z.string().url().default("http://localhost:11434"),
-  OLLAMA_MODEL_LOCAL: z.string().default("gemma3:1b"),
+  OLLAMA_MODEL_LOCAL: z.string().default("qwen2.5-coder:3b"),
 
   OLLAMA_HOST: z.string().url().default("https://ollama.com"),
   OLLAMA_MODEL: z.string().default("gpt-oss:20b-cloud"),
