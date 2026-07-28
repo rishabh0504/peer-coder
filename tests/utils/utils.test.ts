@@ -57,27 +57,34 @@ describe("Utils Unit Test Suite", () => {
   });
 
   it("should test spinner lifecycle and fallback paths", () => {
-    // Start initial spinner
-    const spinner = startAgentSpinner("Thinking", "details info");
-    expect(spinner).toBeDefined();
+    const oldDebug = process.env.DEBUG;
+    process.env.DEBUG = "true";
 
-    // Start second spinner when one is already active (tests activeSpinner.stop())
-    startAgentSpinner("Analyzing", "more details");
+    try {
+      // Start initial spinner
+      const spinner = startAgentSpinner("Thinking", "details info");
+      expect(spinner).toBeDefined();
 
-    updateAgentSpinner("Executing", "new details");
+      // Start second spinner when one is already active (tests activeSpinner.stop())
+      startAgentSpinner("Analyzing", "more details");
 
-    stopAgentSpinner(true, "All done");
+      updateAgentSpinner("Executing", "new details");
 
-    // Stop spinner again when activeSpinner is null
-    stopAgentSpinner(true);
+      stopAgentSpinner(true, "All done");
 
-    // Test updateAgentSpinner when activeSpinner is null
-    updateAgentSpinner("Validating");
-    stopAgentSpinner(false, "Failed step");
+      // Stop spinner again when activeSpinner is null
+      stopAgentSpinner(true);
 
-    // Test stopAgentSpinner false without custom message
-    startAgentSpinner("Reasoning");
-    stopAgentSpinner(false);
+      // Test updateAgentSpinner when activeSpinner is null
+      updateAgentSpinner("Validating");
+      stopAgentSpinner(false, "Failed step");
+
+      // Test stopAgentSpinner false without custom message
+      startAgentSpinner("Reasoning");
+      stopAgentSpinner(false);
+    } finally {
+      process.env.DEBUG = oldDebug;
+    }
   });
 
   it("should test tool-parser native and text fallback parsing", () => {

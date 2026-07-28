@@ -39,7 +39,10 @@ export const readFileTool = tool(
       );
     }
 
-    return JSON.stringify(response.data);
+    return JSON.stringify({
+      path: response.data.path,
+      content: response.data.content,
+    });
   },
   {
     name: "read_file",

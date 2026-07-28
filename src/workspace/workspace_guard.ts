@@ -59,7 +59,12 @@ export async function validateFileReadSafety(
       }
     }
   } catch (err) {
-    if (err instanceof Error) throw err;
+    if (err instanceof Error) {
+      if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+        throw new Error(`File does not exist or is not readable: ${filePath}`);
+      }
+      throw err;
+    }
     throw new Error(String(err));
   }
 }

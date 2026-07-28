@@ -26,7 +26,6 @@ describe("read_file Tool Edge Cases", () => {
     );
     const parsed = JSON.parse(result);
 
-    expect(parsed.totalLines).toBe(3);
     expect(parsed.content).toContain("1 | Line 1");
     expect(parsed.content).toContain("3 | Line 3");
   });
@@ -41,8 +40,6 @@ describe("read_file Tool Edge Cases", () => {
     );
     const parsed = JSON.parse(result);
 
-    expect(parsed.startLine).toBe(2);
-    expect(parsed.endLine).toBe(3);
     expect(parsed.content).not.toContain("1 | Line 1");
     expect(parsed.content).toContain("2 | Line 2");
     expect(parsed.content).toContain("3 | Line 3");
@@ -74,23 +71,57 @@ describe("read_file Tool Edge Cases", () => {
     expect(parsed.content).toBe("Alpha\nBeta");
   });
 
-  it("should throw error when startLine exceeds totalLines", async () => {
+  it("should clamp startLine to totalLines and not throw when startLine exceeds totalLines", async () => {
     const filePath = path.join(testDir, "bounds.txt");
-    await fs.writeFile(filePath, "Line 1", "utf-8");
+    await fs.writeFile(filePath, "Line 1\nLine 2", "utf-8");
+
+    const result = await readFileTool.invoke(
+      { path: filePath, startLine: 10, endLine: 20 },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.content).toBe("2 | Line 2");
+  });
+
+  it("should swap startLine and endLine if startLine > endLine", async () => {
+    const filePath = path.join(testDir, "swap.txt");
+    await fs.writeFile(filePath, "Line 1\nLine 2\nLine 3", "utf-8");
+
+    const result = await readFileTool.invoke(
+      { path: filePath, startLine: 3, endLine: 1 },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.content).toContain("1 | Line 1");
+    expect(parsed.content).toContain("3 | Line 3");
+  });
+
+  it("should handle empty file gracefully", async () => {
+    const filePath = path.join(testDir, "empty.txt");
+    await fs.writeFile(filePath, "", "utf-8");
+
+    const result = await readFileTool.invoke(
+      { path: filePath },
+      { configurable: { workspaceContext: context } },
+    );
+    const parsed = JSON.parse(result);
+    expect(parsed.content).toBe("1 | ");
+  });
+
+  it("should throw error when reading directory", async () => {
+    const dirPath = path.join(testDir, "subdir");
+    await fs.mkdir(dirPath);
 
     await expect(
-      readFileTool.invoke(
-        { path: filePath, startLine: 10 },
-        { configurable: { workspaceContext: context } },
-      ),
-    ).rejects.toThrow(/exceeds total lines/);
+      readFileTool.invoke({ path: dirPath }, { configurable: { workspaceContext: context } }),
+    ).rejects.toThrow(/is a directory/);
   });
 
   it("should throw error when reading non-existent file path", async () => {
     const filePath = path.join(testDir, "missing.txt");
     await expect(
       readFileTool.invoke({ path: filePath }, { configurable: { workspaceContext: context } }),
-    ).rejects.toThrow();
+    ).rejects.toThrow(/does not exist/);
   });
 
   it("should throw security error for relative path breakout (../secret.env)", async () => {

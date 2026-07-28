@@ -1,6 +1,7 @@
 import { ToolMessage } from "@langchain/core/messages";
 import { startAgentSpinner, stopAgentSpinner } from "@utils/spinner.js";
 import type { ParsedToolCall } from "@utils/tool-parser.js";
+import picocolors from "picocolors";
 import { toolsMap } from "./registry.js";
 
 export interface ToolExecutionResult {
@@ -38,9 +39,9 @@ export async function executeToolCall(toolCall: ParsedToolCall): Promise<ToolExe
     }
 
     if (targetPath) {
-      console.log(`\n📄 ${targetPath} Content:\n`);
+      console.log(picocolors.bold(picocolors.blue(`\n📄 ${targetPath} Content:\n`)));
     }
-    console.log(displayContent);
+    console.log(picocolors.cyan(displayContent));
     console.log();
 
     return {

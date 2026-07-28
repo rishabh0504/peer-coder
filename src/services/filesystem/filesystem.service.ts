@@ -32,15 +32,39 @@ export class WorkspaceFileSystem {
     const resolvedPath = validatePath(context, targetPath);
     await validateFileReadSafety(context, resolvedPath);
 
-    const rawContent = await fs.readFile(resolvedPath, "utf-8");
+    let stats: import("node:fs").Stats;
+    try {
+      stats = await fs.stat(resolvedPath);
+    } catch {
+      const errorMsg = `File does not exist or is not readable: ${targetPath}`;
+      throw new Error(errorMsg);
+    }
+
+    if (stats.isDirectory()) {
+      throw new Error(`Path '${targetPath}' is a directory, not a file.`);
+    }
+
+    let rawContent: string;
+    try {
+      rawContent = await fs.readFile(resolvedPath, "utf-8");
+    } catch (err) {
+      throw new Error(`Failed to read file: ${(err as Error).message}`);
+    }
+
     const lines = rawContent.split(/\r?\n/);
-    const totalLines = lines.length;
+    const totalLines = Math.max(1, lines.length);
 
-    const actualStart = Math.max(1, startLine ?? 1);
-    const actualEnd = Math.min(totalLines, endLine ?? totalLines);
+    const parsedStart = startLine ?? 1;
+    const parsedEnd = endLine ?? totalLines;
 
-    if (actualStart > totalLines) {
-      throw new Error(`startLine ${actualStart} exceeds total lines (${totalLines})`);
+    // Handle out of bound and reverse ranges gracefully by clamping
+    let actualStart = Math.min(totalLines, Math.max(1, parsedStart));
+    let actualEnd = Math.min(totalLines, Math.max(1, parsedEnd));
+
+    if (actualStart > actualEnd) {
+      const temp = actualStart;
+      actualStart = actualEnd;
+      actualEnd = temp;
     }
 
     const selectedLines = lines.slice(actualStart - 1, actualEnd);

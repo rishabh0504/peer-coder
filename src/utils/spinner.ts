@@ -1,4 +1,5 @@
 import { spinner as clackSpinner } from "@clack/prompts";
+import { loadEnv } from "@config/env.js";
 import picocolors from "picocolors";
 
 export type AgentVerb =
@@ -14,10 +15,21 @@ export type ClackSpinnerInstance = ReturnType<typeof clackSpinner>;
 
 let activeSpinner: ClackSpinnerInstance | null = null;
 
+const isDebug = (): boolean => {
+  try {
+    const env = loadEnv();
+    return env.DEBUG === true;
+  } catch {
+    return false;
+  }
+};
+
 export function startAgentSpinner(
   verb: AgentVerb = "Thinking",
   details?: string,
-): ClackSpinnerInstance {
+): ClackSpinnerInstance | null {
+  if (!isDebug()) return null;
+
   if (activeSpinner) {
     try {
       activeSpinner.stop();
@@ -37,6 +49,8 @@ export function startAgentSpinner(
 }
 
 export function updateAgentSpinner(verb: AgentVerb, details?: string): void {
+  if (!isDebug()) return;
+
   if (!activeSpinner) {
     startAgentSpinner(verb, details);
     return;
