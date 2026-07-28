@@ -3,9 +3,15 @@ import type { BaseMessage } from "@langchain/core/messages";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { getSystemPrompt } from "@prompts/system.js";
 import { executeToolCall } from "@tools/executor.js";
-import { startAgentSpinner, stopAgentSpinner } from "@utils/spinner.js";
+import {
+  isDebug,
+  startAgentSpinner,
+  stopAgentSpinner,
+  updateAgentSpinner,
+} from "@utils/spinner.js";
 import { parseToolCall } from "@utils/tool-parser.js";
 import chalk from "chalk";
+import picocolors from "picocolors";
 import { chatStream } from "./index.js";
 
 export interface InteractOptions {
@@ -13,8 +19,8 @@ export interface InteractOptions {
 }
 
 export const interact = async (userPrompt: string) => {
-  const env = loadEnv();
-  const isDebug = env.DEBUG === true;
+  loadEnv(); // ensure env is loaded (side-effect: validates config)
+  const debug = isDebug();
 
   const messages: BaseMessage[] = [
     new SystemMessage(getSystemPrompt()),
@@ -32,13 +38,25 @@ export const interact = async (userPrompt: string) => {
 
     for await (const chunk of stream) {
       if (!firstTokenReceived) {
-        stopAgentSpinner(true);
         firstTokenReceived = true;
+
+        if (chunk.tool_calls && chunk.tool_calls.length > 0) {
+          // Model is calling a tool — update spinner label
+          const toolName = chunk.tool_calls[0].name;
+          updateAgentSpinner("Analyzing", `preparing ${chalk.cyan(toolName)}`);
+        } else {
+          // Model is returning plain text — stop spinner and stream directly
+          stopAgentSpinner(true);
+          process.stdout.write("\n");
+        }
       }
 
       if (typeof chunk.content === "string" && chunk.content) {
         accumulatedContent += chunk.content;
-        if (isDebug) {
+        // Always stream text to stdout (not only in debug mode)
+        if (!nativeToolCalls.length) {
+          process.stdout.write(picocolors.white(chunk.content));
+        } else if (debug) {
           process.stdout.write(chunk.content);
         }
       }
@@ -54,11 +72,15 @@ export const interact = async (userPrompt: string) => {
       }
     }
 
-    if (!firstTokenReceived) {
+    // Ensure spinner stopped after stream ends
+    if (firstTokenReceived && nativeToolCalls.length > 0) {
+      // will be stopped inside executeToolCall
+    } else if (!firstTokenReceived) {
       stopAgentSpinner(true);
     }
 
-    if (isDebug && accumulatedContent.length > 0) {
+    // Print trailing newline after streamed text
+    if (accumulatedContent.length > 0 && !nativeToolCalls.length) {
       process.stdout.write("\n");
     }
 
@@ -66,10 +88,10 @@ export const interact = async (userPrompt: string) => {
     const toolCall = parseToolCall(nativeToolCalls, accumulatedContent);
 
     if (toolCall) {
-      // Execute tool call
-      startAgentSpinner("Executing", `${chalk.cyan(toolCall.name)}`);
+      stopAgentSpinner(true);
       await executeToolCall(toolCall);
-    } else if (!isDebug && accumulatedContent.length > 0) {
+    } else if (debug && accumulatedContent.length > 0 && nativeToolCalls.length > 0) {
+      // Debug: dump raw content that wasn't streamed
       console.log(accumulatedContent);
     }
   } catch (err) {

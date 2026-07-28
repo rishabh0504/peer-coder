@@ -59,6 +59,7 @@ export async function startRepl(): Promise<void> {
 
     try {
       await interact(command);
+      console.log(picocolors.dim("─────────────────────────────────────────────────────"));
     } catch (err) {
       logger.error(err instanceof Error ? err.message : String(err));
     }

@@ -60,6 +60,7 @@ describe("CLI entrypoint (src/cli.ts) Suite", () => {
   });
 
   it("should handle unknown command by logging error and exiting", async () => {
+    // @ts-expect-error - emit is not typed on Command but exists at runtime
     program.emit("command:*", ["unknown_subcommand"]);
 
     const { logger } = await import("../src/utils/logger.js");
