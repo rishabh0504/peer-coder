@@ -8,7 +8,7 @@ const program = new Command();
 
 program
   .name("peer-coder")
-  .description("Production-grade Node.js CLI template built with TypeScript")
+  .description("Node.js CLI Coder Agent")
   .version("1.0.0");
 
 program
