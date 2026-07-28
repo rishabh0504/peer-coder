@@ -14,7 +14,7 @@ const envSchema = z.object({
   OLLAMA_MODEL: z.string().default("gemma3:1b"),
 
   OLLAMA_EMBED_MODEL: z.string().default("nomic-embed-text"),
-  OLLAMA_LOCAL: z.boolean().default(true)
+  OLLAMA_LOCAL: z.boolean().default(true),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

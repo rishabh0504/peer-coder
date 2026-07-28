@@ -23,21 +23,10 @@
     "paths": {
       "@/*": ["src/*"],
       "@agents/*": ["src/agents/*"],
-      "@changes/*": ["src/changes/*"],
       "@cli/*": ["src/cli/*"],
       "@config/*": ["src/config/*"],
-      "@context/*": ["src/context/*"],
-      "@models/*": ["src/models/*"],
-      "@observability/*": ["src/observability/*"],
-      "@orchestration/*": ["src/orchestration/*"],
-      "@prompts/*": ["src/prompts/*"],
-      "@repository/*": ["src/repository/*"],
-      "@runtime/*": ["src/runtime/*"],
-      "@security/*": ["src/security/*"],
-      "@state/*": ["src/state/*"],
-      "@tools/*": ["src/tools/*"],
       "@utils/*": ["src/utils/*"],
-      "@validation/*": ["src/validation/*"]
+      "@providers/*": ["src/providers/*"]
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
