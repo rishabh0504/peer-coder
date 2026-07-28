@@ -1,57 +1,64 @@
-# 🚀 Modern Production-Grade Node.js CLI Template
+# 🚀 Peer Coder CLI (`peer-coder`)
 
-> A feature-complete, modern TypeScript CLI template powered by ESM, Commander, `@clack/prompts`, Zod, Tsup, Biome, Vitest, and GitHub Actions.
+> A production-grade Node.js CLI & AI Coding Agent Architecture scaffold built with TypeScript, ESM, Commander, `@clack/prompts`, Zod, `tsup`, Biome, Vitest, and GitHub Actions.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-blue)
 ![Node](https://img.shields.io/badge/Node.js-%3E%3D18-brightgreen)
+![pnpm](https://img.shields.io/badge/pnpm-%3E%3D10-orange)
 
 ---
 
 ## ✨ Features
 
 - ⚡ **Lightning Fast Bundling**: Powered by [`tsup`](https://tsup.egoist.dev/) (built on `esbuild`).
-- 🎨 **Beautiful UI & Interactive Prompts**: Powered by [`@clack/prompts`](https://github.com/natemoo-re/clack), `boxen`, and `picocolors`.
-- 🛡️ **Schema & Env Validation**: Strongly-typed runtime validation using [`zod`](https://zod.dev/).
-- 🔍 **Instant Linting & Formatting**: Configured with [`biome`](https://biomejs.dev/).
-- 🧪 **Unit & Integration Testing**: Modern fast runner [`vitest`](https://vitest.dev/).
-- 🪝 **Git Hooks & Conventional Commits**: Pre-configured with [`husky`](https://typicode.github.io/husky/), [`lint-staged`](https://github.com/lint-staged/lint-staged), and [`commitlint`](https://commitlint.js.org/).
-- 📦 **Dual Output**: Formatted as both a CLI binary (`bin`) and an importable TypeScript library export (`dist/index.js`).
-- 👷 **Continuous Integration**: GitHub Actions workflow for multi-version Node testing & verification.
+- 🎨 **Interactive UI & Prompts**: Built with [`@clack/prompts`](https://github.com/natemoo-re/clack), `boxen`, and `picocolors`.
+- 🛡️ **Schema & Env Validation**: Strongly-typed runtime validation powered by [`zod`](https://zod.dev/).
+- 🗺️ **Comprehensive Path Aliases**: Configured `@agents/*`, `@cli/*`, `@config/*`, `@context/*`, `@tools/*`, `@utils/*`, and more.
+- 🔗 **Global Link Command**: Pre-configured `pnpm run link` command for testing globally as `peer-coder`.
+- 🔍 **Code Quality & Linting**: Built-in [`biome`](https://biomejs.dev/) for instant linting & formatting.
+- 🧪 **Testing Framework**: Fast test runner with [`vitest`](https://vitest.dev/).
+- 🪝 **Git Workflow**: Integrated [`husky`](https://typicode.github.io/husky/), [`lint-staged`](https://github.com/lint-staged/lint-staged), and [`commitlint`](https://commitlint.js.org/).
 
 ---
 
 ## 📁 Project Structure
 
 ```text
-.
+peer-coder/
 ├── .github/
 │   └── workflows/
-│       └── ci.yml          # GitHub Actions CI Workflow
-├── bin/
-│   └── cli.js              # Executable entry script wrapper
+│       └── ci.yml            # GitHub Actions CI Workflow
+├── docs/
+│   └── requirements.md       # Architecture specifications
 ├── src/
-│   ├── commands/           # CLI command handlers
-│   │   ├── info.ts         # System & env diagnostic command
-│   │   └── init.ts         # Interactive wizard command
-│   ├── config/             # Environment & app configurations
-│   │   └── env.ts          # Zod env parser
-│   ├── utils/              # Utilities (logger, error handling)
-│   │   ├── errors.ts
-│   │   └── logger.ts
-│   ├── cli.ts              # Commander routing & CLI entry point
-│   └── index.ts            # Library export entry point
-├── tests/                  # Vitest test suite
-│   └── cli.test.ts
-├── biome.json              # Biome linter & formatter config
-├── tsup.config.ts          # Bundler configuration
-├── tsconfig.json           # TypeScript configuration
+│   ├── agents/               # Specialist AI Agents (analyzer, planner, executor, validator, reflection)
+│   ├── cli/                  # CLI command handlers (init, info)
+│   ├── config/               # Environment & configuration (Zod env validator)
+│   ├── context/              # Context engineering pipeline
+│   ├── models/               # LLM provider abstractions
+│   ├── observability/        # Logging & telemetry
+│   ├── orchestration/        # LangGraph workflow orchestration
+│   ├── prompts/              # Agent system prompts
+│   ├── repository/           # Repository intelligence & indexing
+│   ├── runtime/              # Agent runtime engine
+│   ├── security/             # Security scanner & sandbox
+│   ├── state/                # State management
+│   ├── tools/                # Execution tool system
+│   ├── utils/                # Utilities (logger, error handling)
+│   ├── validation/           # Validation pipeline
+│   ├── cli.ts                # Commander routing & CLI entry point
+│   └── index.ts              # Exportable library entry point
+├── tests/                    # Vitest test suite
+├── biome.json                # Biome linter & formatter config
+├── tsup.config.ts            # Bundler configuration
+├── tsconfig.json             # TypeScript configuration with path aliases
 └── package.json
 ```
 
 ---
 
-## 🚦 Quick Start
+## 🚀 Quick Start
 
 ### 1. Install Dependencies
 
@@ -59,32 +66,26 @@
 pnpm install
 ```
 
-### 2. Development Mode
+### 2. Global Link
 
-Watch for changes and continuously rebuild the executable:
+Build and link `peer-coder` globally to your path:
 
 ```bash
-pnpm dev
+pnpm run link
 ```
 
-Run local CLI commands directly with Node:
+Now run the CLI directly from anywhere in your terminal:
 
 ```bash
-pnpm start -- --help
-pnpm start -- init
-pnpm start -- info
+peer-coder --help
+peer-coder info
+peer-coder init
 ```
 
-### 3. Build & Test Executable
+To unlink globally:
 
 ```bash
-# Build production bundle
-pnpm build
-
-# Test the generated binary
-./dist/cli.js --help
-./dist/cli.js init -y
-./dist/cli.js info
+pnpm run unlink
 ```
 
 ---
@@ -95,14 +96,17 @@ pnpm build
 | :--- | :--- |
 | `pnpm dev` | Rebuild bundle automatically on file change |
 | `pnpm build` | Bundle CLI into `./dist/cli.js` & `./dist/index.js` |
+| `pnpm run link` | Build and link `peer-coder` globally to system path |
+| `pnpm run unlink` | Remove global binary link |
 | `pnpm typecheck` | Run TypeScript type safety checks |
-| `pnpm lint` | Run Biome linter & formatter check |
-| `pnpm lint:fix` | Automatically fix Biome linting/formatting issues |
-| `pnpm test` | Run Vitest unit tests |
-| `pnpm test:coverage` | Generate code coverage report |
+| `pnpm lint` | Run Biome linter check |
+| `pnpm lint:fix` | Fix Biome linting & formatting issues |
+| `pnpm test` | Run Vitest test suite |
+| `pnpm test:coverage` | Generate test code coverage report |
 
 ---
 
 ## 📝 License
 
 [MIT](./LICENSE)
+
