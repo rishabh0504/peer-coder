@@ -29,13 +29,13 @@ describe("web-search & workspace Tools Suite", () => {
 
     const results = await searchDuckDuckGo("test query", 5);
     expect(results).toHaveLength(2);
-    expect(results[0].title).toBe("First Example");
-    expect(results[0].url).toBe("https://example1.com/foo");
-    expect(results[0].snippet).toBe("Snippet One");
+    expect(results[0]?.title).toBe("First Example");
+    expect(results[0]?.url).toBe("https://example1.com/foo");
+    expect(results[0]?.snippet).toBe("Snippet One");
 
-    expect(results[1].title).toBe("Second Page");
-    expect(results[1].url).toBe("https://example2.com");
-    expect(results[1].snippet).toBe("Snippet Two");
+    expect(results[1]?.title).toBe("Second Page");
+    expect(results[1]?.url).toBe("https://example2.com");
+    expect(results[1]?.snippet).toBe("Snippet Two");
 
     fetchMock.mockRestore();
   });

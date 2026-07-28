@@ -40,9 +40,10 @@ export const interact = async (userPrompt: string) => {
       if (!firstTokenReceived) {
         firstTokenReceived = true;
 
-        if (chunk.tool_calls && chunk.tool_calls.length > 0) {
+        const firstTool = chunk.tool_calls?.[0];
+        if (firstTool) {
           // Model is calling a tool — update spinner label
-          const toolName = chunk.tool_calls[0].name;
+          const toolName = firstTool.name;
           updateAgentSpinner("Analyzing", `preparing ${chalk.cyan(toolName)}`);
         } else {
           // Model is returning plain text — stop spinner and stream directly
