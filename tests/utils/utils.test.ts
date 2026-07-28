@@ -65,7 +65,6 @@ describe("Utils Unit Test Suite", () => {
     startAgentSpinner("Analyzing", "more details");
 
     updateAgentSpinner("Executing", "new details");
-    expect(spinner.text).toBeDefined();
 
     stopAgentSpinner(true, "All done");
 

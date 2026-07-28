@@ -1,11 +1,21 @@
-import EventEmitter from "node:events";
+import * as clackPrompts from "@clack/prompts";
 import { printBrandBanner } from "@cli/brand.js";
 import { infoCommand } from "@cli/info.js";
 import { startRepl } from "@cli/repl.js";
 import { describe, expect, it, vi } from "vitest";
 
+vi.mock("@clack/prompts", () => {
+  return {
+    intro: vi.fn(),
+    outro: vi.fn(),
+    note: vi.fn(),
+    text: vi.fn(),
+    isCancel: vi.fn().mockImplementation((val) => val === "CANCEL_TOKEN"),
+  };
+});
+
 vi.mock("../src/integration/interact.js", () => ({
-  interact: vi.fn().mockResolvedValue("mocked response"),
+  interact: vi.fn().mockImplementation(() => Promise.resolve()),
 }));
 
 describe("CLI Module Suite (brand, info, repl)", () => {
@@ -23,44 +33,20 @@ describe("CLI Module Suite (brand, info, repl)", () => {
     consoleSpy.mockRestore();
   });
 
-  it("should test startRepl commands", async () => {
-    class MockReadline extends EventEmitter {
-      prompt = vi.fn();
-      pause = vi.fn();
-      resume = vi.fn();
-    }
+  it("should test startRepl commands with @clack/prompts", async () => {
+    const textMock = vi.mocked(clackPrompts.text);
 
-    const mockRl = new MockReadline();
-    vi.spyOn(require("node:readline"), "createInterface").mockReturnValue(mockRl as any);
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-    const exitSpy = vi.spyOn(process, "exit").mockImplementation((() => {}) as any);
+    textMock
+      .mockResolvedValueOnce("/info")
+      .mockResolvedValueOnce("/help")
+      .mockResolvedValueOnce("/clear")
+      .mockResolvedValueOnce("Explain async/await")
+      .mockResolvedValueOnce("CANCEL_TOKEN");
 
-    void startRepl();
+    await startRepl();
 
-    // Trigger empty line
-    mockRl.emit("line", "");
+    expect(textMock).toHaveBeenCalledTimes(5);
 
-    // Trigger /info
-    mockRl.emit("line", "/info");
-
-    // Trigger /help
-    mockRl.emit("line", "/help");
-
-    // Trigger /clear
-    mockRl.emit("line", "/clear");
-
-    // Trigger normal user input (AI prompt)
-    await mockRl.emit("line", "Explain async/await");
-
-    // Trigger /exit
-    mockRl.emit("line", "/exit");
-    expect(exitSpy).toHaveBeenCalledWith(0);
-
-    // Trigger close
-    mockRl.emit("close");
-
-    consoleSpy.mockRestore();
-    exitSpy.mockRestore();
     vi.restoreAllMocks();
   });
 });
