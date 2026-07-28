@@ -1,79 +1,67 @@
-import readline from "node:readline";
+import { intro, isCancel, note, outro, text } from "@clack/prompts";
 import { printBrandBanner } from "@cli/brand.js";
 import { infoCommand } from "@cli/info.js";
 import { logger } from "@utils/logger.js";
 import picocolors from "picocolors";
 import { interact } from "../integration/interact.js";
 
-const COMMANDS = ["/info", "/help", "/clear", "/exit"];
-
-function completer(line: string) {
-  const hits = COMMANDS.filter((c) => c.startsWith(line.trim()));
-  return [hits.length ? hits : COMMANDS, line];
-}
-
 export async function startRepl(): Promise<void> {
   printBrandBanner();
+  intro(picocolors.bgCyan(picocolors.black(" PEER CODER AGENT SESSION ")));
 
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    prompt: `${picocolors.bold(picocolors.cyan("> "))}`,
-    completer,
-  });
+  const running = true;
 
-  rl.prompt();
+  while (running) {
+    const input = await text({
+      message: "What would you like me to build or modify?",
+      placeholder: "Type a prompt or command (/info, /clear, /exit, /help)",
+      validate(value) {
+        if (value.trim().length === 0) {
+          return "Please enter a non-empty prompt or command.";
+        }
+        return undefined;
+      },
+    });
 
-  rl.on("line", async (line) => {
-    const input = line.trim();
-
-    if (!input) {
-      rl.prompt();
-      return;
+    if (isCancel(input)) {
+      outro("Session cancelled. Goodbye! 👋");
+      break;
     }
 
-    if (input === "/exit" || input === "exit") {
-      logger.info("Goodbye! 👋");
-      process.exit(0);
+    const command = (input as string).trim();
+
+    if (command === "/exit" || command === "exit") {
+      outro("Goodbye! 👋");
+      break;
     }
 
-    if (input === "/clear" || input === "clear") {
+    if (command === "/clear" || command === "clear") {
       console.clear();
       printBrandBanner();
-      rl.prompt();
-      return;
+      intro(picocolors.bgCyan(picocolors.black(" PEER CODER AGENT SESSION ")));
+      continue;
     }
 
-    if (input === "/info") {
+    if (command === "/info") {
       infoCommand();
-      rl.prompt();
-      return;
+      continue;
     }
 
-    if (input === "/help" || input === "help") {
-      console.log(`
-  ${picocolors.bold("Commands:")}
-    ${picocolors.cyan("/info")}   - System & environment diagnostics
-    ${picocolors.cyan("/clear")}  - Clear screen
-    ${picocolors.cyan("/exit")}   - Exit session
-`);
-      rl.prompt();
-      return;
+    if (command === "/help" || command === "help") {
+      note(
+        `${picocolors.cyan("/info")}   - System & environment diagnostics\n` +
+          `${picocolors.cyan("/clear")}  - Clear screen\n` +
+          `${picocolors.cyan("/exit")}   - Exit session`,
+        "Available Commands",
+      );
+      continue;
     }
 
-    // AI prompt streaming interaction
-    rl.pause();
     try {
-      await interact(input);
+      await interact(command);
+      console.log(picocolors.dim("─────────────────────────────────────────────────────"));
     } catch (err) {
       logger.error(err instanceof Error ? err.message : String(err));
     }
-    rl.resume();
-    rl.prompt();
-  });
-
-  rl.on("close", () => {
-    logger.info("Session closed.");
-    process.exit(0);
-  });
+  }
 }
