@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
 import { validateFileReadSafety, validatePath } from "@workspace/workspace_guard.js";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 describe("WorkspaceGuard Exhaustive Branch Coverage", () => {
   const context = createDefaultWorkspaceContext(process.cwd());
@@ -52,8 +52,8 @@ describe("WorkspaceGuard Exhaustive Branch Coverage", () => {
   });
 
   it("should handle non-Error throw gracefully in validateFileReadSafety catch block", async () => {
-    await expect(
-      validateFileReadSafety(context, "non_existent_file_path_12345.xyz"),
-    ).rejects.toThrow();
+    const fsSpy = vi.spyOn(fs, "stat").mockRejectedValue("string_error" as any);
+    await expect(validateFileReadSafety(context, "some_file.txt")).rejects.toThrow("string_error");
+    fsSpy.mockRestore();
   });
 });
