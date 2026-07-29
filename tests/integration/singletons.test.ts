@@ -1,4 +1,42 @@
 import { describe, expect, it, vi } from "vitest";
+
+vi.mock("ioredis", () => {
+  const EventEmitter = require("node:events");
+  class MockRedis extends EventEmitter {
+    disconnect = vi.fn().mockResolvedValue(undefined);
+    quit = vi.fn().mockResolvedValue(undefined);
+  }
+  return {
+    Redis: MockRedis,
+    default: MockRedis,
+  };
+});
+
+vi.mock("@supabase/supabase-js", () => {
+  return {
+    createClient: vi.fn().mockReturnValue({
+      from: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockResolvedValue({ error: null }),
+      rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
+    }),
+  };
+});
+
+vi.mock("@langchain/ollama", () => {
+  class MockOllamaEmbeddings {
+    embedDocuments = vi.fn().mockResolvedValue([[0.1, 0.2]]);
+    embedQuery = vi.fn().mockResolvedValue([0.1, 0.2]);
+  }
+  class MockChatOllama {
+    bindTools = vi.fn().mockReturnThis();
+    stream = vi.fn().mockResolvedValue([]);
+  }
+  return {
+    OllamaEmbeddings: MockOllamaEmbeddings,
+    ChatOllama: MockChatOllama,
+  };
+});
+
 import { getSupabaseInstance, supabaseClient } from "../../src/integration/database/index.js";
 import { getRedisInstance, redisClient } from "../../src/integration/redis/index.js";
 import { getEmbeddingsInstance, vectorEmbeddings } from "../../src/integration/vectors/index.js";

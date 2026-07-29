@@ -1,4 +1,20 @@
 import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@langchain/ollama", () => {
+  class MockOllamaEmbeddings {
+    embedDocuments = vi.fn().mockResolvedValue([[0.1, 0.2]]);
+    embedQuery = vi.fn().mockResolvedValue([0.1, 0.2]);
+  }
+  class MockChatOllama {
+    bindTools = vi.fn().mockReturnThis();
+    stream = vi.fn().mockResolvedValue([]);
+  }
+  return {
+    OllamaEmbeddings: MockOllamaEmbeddings,
+    ChatOllama: MockChatOllama,
+  };
+});
+
 import { boundModel, chatStream } from "../../src/integration/llms/index.js";
 import { interact } from "../../src/integration/llms/interact.js";
 import { ollamaInstance } from "../../src/providers/ollama/index.js";
