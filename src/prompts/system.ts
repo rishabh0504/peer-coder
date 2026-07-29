@@ -27,6 +27,7 @@ TOOL USAGE DIRECTIVES & STRICT NON-OVERLAPPING BOUNDARIES:
 - git_status: Use ONLY to check working tree state, branch name, and uncommitted file modifications.
 - git_diff: Use ONLY to review uncommitted file diffs or patch changes in git tracking.
 - web_search: Use ONLY to search external DuckDuckGo web results for documentation, libraries, or APIs when local codebase context is insufficient.
+- fetch_webpage: Use ONLY to fetch and clean the readable plain text content of a specific direct webpage URL. Do NOT use for general queries or query listing.
 - workspace_info: Use ONLY to fetch workspace root directory metadata and security permission scopes.
 
 CORE OPERATIONAL GUIDELINES:
