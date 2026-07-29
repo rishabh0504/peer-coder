@@ -1,9 +1,9 @@
+import { interact } from "@/integration/llms/interact.js";
 import { intro, isCancel, note, outro, text } from "@clack/prompts";
 import { printBrandBanner } from "@cli/brand.js";
 import { infoCommand } from "@cli/info.js";
 import { logger } from "@utils/logger.js";
 import picocolors from "picocolors";
-import { interact } from "../integration/interact.js";
 
 export async function startRepl(): Promise<void> {
   printBrandBanner();

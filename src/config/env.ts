@@ -32,6 +32,14 @@ const envSchema = z.object({
       return val;
     }, z.boolean())
     .default(false),
+
+  REDIS_HOST: z.string().default("127.0.0.1"),
+  REDIS_PORT: z.coerce.number().default(6379),
+  REDIS_PASSWORD: z.string().optional(),
+
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_ANON_KEY: z.string().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

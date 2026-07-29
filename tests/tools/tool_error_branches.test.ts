@@ -1,3 +1,4 @@
+import "../../src/tools/index.js";
 import { defaultToolRuntime } from "@runtime/tool_runtime.js";
 import { applyPatchTool } from "@tools/file-system/apply_patch.js";
 import { createFileTool } from "@tools/file-system/create_file.js";

@@ -92,4 +92,34 @@ describe("ToolRuntime Pipeline Edge Cases", () => {
 
     expect(defaultWorkspaceLockManager.isLocked("exception_file.txt")).toBe(false);
   });
+
+  it("should successfully return data when executeOrThrow succeeds", async () => {
+    const runtime = new ToolRuntime();
+    const context = createDefaultWorkspaceContext();
+
+    const data = await runtime.executeOrThrow(
+      "read_file",
+      { path: "test.txt" },
+      async () => ({ content: "hello" }),
+      context,
+    );
+
+    expect(data).toEqual({ content: "hello" });
+  });
+
+  it("should throw ToolExecutionError when executeOrThrow fails", async () => {
+    const runtime = new ToolRuntime();
+    const context = createDefaultWorkspaceContext();
+
+    await expect(
+      runtime.executeOrThrow(
+        "create_file",
+        { path: "error.txt" },
+        async () => {
+          throw new Error("Failure message");
+        },
+        context,
+      ),
+    ).rejects.toThrowError(/Failure message/);
+  });
 });

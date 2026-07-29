@@ -1,4 +1,4 @@
-import { CLIError, handleError } from "@utils/errors.js";
+import { CLIError, ToolExecutionError, handleError } from "@utils/errors.js";
 import { logger } from "@utils/logger.js";
 import { startAgentSpinner, stopAgentSpinner, updateAgentSpinner } from "@utils/spinner.js";
 import { parseToolCall } from "@utils/tool-parser.js";
@@ -16,6 +16,11 @@ describe("Utils Unit Test Suite", () => {
     handleError(cliErr);
     expect(errorSpy).toHaveBeenCalledWith("Custom CLI Error");
     expect(exitSpy).toHaveBeenCalledWith(2);
+
+    const toolErr = new ToolExecutionError("Tool execution failed", "read_file", "EXEC_ERROR");
+    handleError(toolErr);
+    expect(errorSpy).toHaveBeenCalledWith("[read_file] Error (EXEC_ERROR): Tool execution failed");
+    expect(exitSpy).toHaveBeenCalledWith(1);
 
     // Test with process.env.DEBUG = "true"
     const oldDebug = process.env.DEBUG;
@@ -56,7 +61,7 @@ describe("Utils Unit Test Suite", () => {
     errSpy.mockRestore();
   });
 
-  it("should test spinner lifecycle and fallback paths", () => {
+  it("should test spinner lifecycle and fallback paths", async () => {
     const oldDebug = process.env.DEBUG;
     process.env.DEBUG = "true";
 
@@ -65,10 +70,18 @@ describe("Utils Unit Test Suite", () => {
       const spinner = startAgentSpinner("Thinking", "details info");
       expect(spinner).toBeDefined();
 
-      // Start second spinner when one is already active (tests activeSpinner.stop())
+      // Mock activeSpinner.stop to throw an error to cover line 34-36 catch block
+      if (spinner) {
+        vi.spyOn(spinner, "stop").mockImplementation(() => {
+          throw new Error("Mocked stop failure");
+        });
+      }
+
+      // Start second spinner when one is already active (tests activeSpinner.stop() throwing)
       startAgentSpinner("Analyzing", "more details");
 
-      updateAgentSpinner("Executing", "new details");
+      // Test updateAgentSpinner without details parameter to cover line 57
+      updateAgentSpinner("Executing");
 
       stopAgentSpinner(true, "All done");
 
@@ -85,6 +98,17 @@ describe("Utils Unit Test Suite", () => {
     } finally {
       process.env.DEBUG = oldDebug;
     }
+
+    // Test isDebug catch block when loadEnv throws an error (lines 23-24)
+    const envModule = await import("../../src/config/env.js");
+    const loadEnvSpy = vi.spyOn(envModule, "loadEnv").mockImplementation(() => {
+      throw new Error("Load env mock error");
+    });
+
+    const { isDebug } = await import("../../src/utils/spinner.js");
+    expect(isDebug()).toBe(false);
+
+    loadEnvSpy.mockRestore();
   });
 
   it("should test tool-parser native and text fallback parsing", () => {
