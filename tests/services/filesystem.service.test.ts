@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { workspaceFileSystem } from "@services/filesystem/filesystem.service.js";
 import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("WorkspaceFileSystem Service", () => {
   const testDir = path.resolve(process.cwd(), "temp_test_workspace");
@@ -49,5 +49,57 @@ describe("WorkspaceFileSystem Service", () => {
     expect(deleteRes.deleted).toBe(true);
 
     await expect(workspaceFileSystem.readFile(context, filePath)).rejects.toThrow();
+  });
+
+  it("should throw error when reading non-existent file", async () => {
+    const filePath = "non_existent.txt";
+    const guardModule = await import("../../src/workspace/workspace_guard.js");
+    const safetySpy = vi.spyOn(guardModule, "validateFileReadSafety").mockResolvedValue();
+
+    await expect(workspaceFileSystem.readFile(context, filePath)).rejects.toThrow(
+      "File does not exist or is not readable:",
+    );
+
+    safetySpy.mockRestore();
+  });
+
+  it("should throw error when path is a directory", async () => {
+    const dirPath = "some_sub_dir";
+    await fs.mkdir(path.resolve(testDir, dirPath), { recursive: true });
+
+    const guardModule = await import("../../src/workspace/workspace_guard.js");
+    const safetySpy = vi.spyOn(guardModule, "validateFileReadSafety").mockResolvedValue();
+
+    await expect(workspaceFileSystem.readFile(context, dirPath)).rejects.toThrow(
+      "is a directory, not a file.",
+    );
+
+    safetySpy.mockRestore();
+  });
+
+  it("should throw error when fs.readFile fails", async () => {
+    const filePath = "failed_read.txt";
+    await workspaceFileSystem.createFile(context, filePath, "test content");
+
+    const fsSpy = vi.spyOn(fs, "readFile").mockRejectedValue(new Error("Disk error"));
+
+    await expect(workspaceFileSystem.readFile(context, filePath)).rejects.toThrow(
+      "Failed to read file: Disk error",
+    );
+
+    fsSpy.mockRestore();
+  });
+
+  it("should throw error when startLine is out of bounds in applyPatch", async () => {
+    const filePath = "patch_bounds.txt";
+    await workspaceFileSystem.createFile(context, filePath, "line 1\nline 2");
+
+    await expect(
+      workspaceFileSystem.applyPatch(context, filePath, 0, 2, "new content"),
+    ).rejects.toThrow("Invalid startLine 0");
+
+    await expect(
+      workspaceFileSystem.applyPatch(context, filePath, 3, 2, "new content"),
+    ).rejects.toThrow("Invalid startLine 3");
   });
 });

@@ -97,4 +97,19 @@ describe("CLI entrypoint (src/cli.ts) Suite", () => {
     expect(handleError).toHaveBeenCalled();
     parseSpy.mockRestore();
   });
+
+  it("should trigger main auto-run when NODE_ENV is not test", async () => {
+    vi.resetModules();
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = "development";
+
+    // Dynamically import src/cli.ts to execute the auto-run logic
+    await import("../src/cli.js");
+
+    const { startRepl } = await import("../src/cli/repl.js");
+    expect(startRepl).toHaveBeenCalled();
+
+    process.env.NODE_ENV = originalNodeEnv;
+    vi.resetModules();
+  });
 });

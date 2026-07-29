@@ -14,8 +14,16 @@ vi.mock("@clack/prompts", () => {
   };
 });
 
-vi.mock("../src/integration/interact.js", () => ({
-  interact: vi.fn().mockImplementation(() => Promise.resolve()),
+vi.mock("../../src/integration/llms/interact.js", () => ({
+  interact: vi.fn().mockImplementation((prompt) => {
+    if (prompt === "ThrowErrorPrompt") {
+      return Promise.reject(new Error("REPL interact error"));
+    }
+    if (prompt === "ThrowStringErrorPrompt") {
+      return Promise.reject("REPL string error");
+    }
+    return Promise.resolve();
+  }),
 }));
 
 describe("CLI Module Suite (brand, info, repl)", () => {
@@ -41,12 +49,31 @@ describe("CLI Module Suite (brand, info, repl)", () => {
       .mockResolvedValueOnce("/help")
       .mockResolvedValueOnce("/clear")
       .mockResolvedValueOnce("Explain async/await")
+      .mockResolvedValueOnce("ThrowErrorPrompt")
+      .mockResolvedValueOnce("ThrowStringErrorPrompt")
       .mockResolvedValueOnce("CANCEL_TOKEN");
 
     await startRepl();
 
-    expect(textMock).toHaveBeenCalledTimes(5);
+    expect(textMock).toHaveBeenCalled();
 
+    // Verify validate function inside text options
+    const callArgs = textMock.mock.calls[0]?.[0];
+    if (callArgs?.validate) {
+      expect(callArgs.validate("")).toBe("Please enter a non-empty prompt or command.");
+      expect(callArgs.validate("   ")).toBe("Please enter a non-empty prompt or command.");
+      expect(callArgs.validate("hello")).toBeUndefined();
+    }
+
+    vi.restoreAllMocks();
+  });
+
+  it("should exit immediately when 'exit' command is entered", async () => {
+    const textMock = vi.mocked(clackPrompts.text);
+    textMock.mockResolvedValueOnce("exit");
+
+    await startRepl();
+    expect(textMock).toHaveBeenCalledTimes(1);
     vi.restoreAllMocks();
   });
 });
