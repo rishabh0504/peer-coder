@@ -1,0 +1,22 @@
+<div class="result">
+  <a class="result__a" href="/html/?q=test&uddg=https%3A%2F%2Fexample.com%2Fpage1">Example Page 1</a>
+  <a class="result__snippet" href="#">Snippet text for example page 1.</a>
+</div>
+<div class="result">
+  <a class="result__a" href="/html/?q=test&uddg=https%3A%2F%2Fexample.com%2Fpage2%2F">Example Page 2</a>
+  <a class="result__snippet" href="#">Snippet text for example page 2.</a>
+</div>
+<div class="result">
+  <!-- Duplicate of page 1 with utm parameters -->
+  <a class="result__a" href="/html/?q=test&uddg=https%3A%2F%2Fexample.com%2Fpage1%3Futm_source%3Dtwitter">Example Page 1 Duplicated</a>
+  <a class="result__snippet" href="#">Duplicate snippet.</a>
+</div>
+<div class="result">
+  <!-- Blocked loopback URL -->
+  <a class="result__a" href="/html/?q=test&uddg=http%3A%2F%2Flocalhost%3A3000%2Fsecret">Local Host Page</a>
+</div>
+<div class="result">
+  <!-- Malformed uddg component throwing URIError -->
+  <a class="result__a" href="/html/?q=test&uddg=%invalid">Example Page Malformed Href</a>
+  <a class="result__snippet" href="#">Malformed snippet.</a>
+</div>
