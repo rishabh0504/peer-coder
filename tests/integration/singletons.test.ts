@@ -37,6 +37,27 @@ vi.mock("@langchain/ollama", () => {
   };
 });
 
+vi.mock("../../src/config/env.js", () => {
+  return {
+    loadEnv: () => ({
+      NODE_ENV: "test",
+      LOG_LEVEL: "info",
+      OLLAMA_HOST_LOCAL: "http://localhost:11434",
+      OLLAMA_MODEL_LOCAL: "qwen2.5-coder:7b",
+      OLLAMA_HOST: "https://ollama.com",
+      OLLAMA_MODEL: "gpt-oss:20b-cloud",
+      OLLAMA_EMBED_MODEL: "nomic-embed-text",
+      OLLAMA_LOCAL: true,
+      DEBUG: false,
+      REDIS_HOST: "127.0.0.1",
+      REDIS_PORT: 6379,
+      SUPABASE_URL: "https://example.supabase.co",
+      SUPABASE_ANON_KEY: "fake-key",
+      SUPABASE_SERVICE_ROLE_KEY: "fake-role-key",
+    }),
+  };
+});
+
 import { getSupabaseInstance, supabaseClient } from "../../src/integration/database/index.js";
 import { getRedisInstance, redisClient } from "../../src/integration/redis/index.js";
 import { getEmbeddingsInstance, vectorEmbeddings } from "../../src/integration/vectors/index.js";
