@@ -1,4 +1,4 @@
-import { DEFAULT_SYSTEM_PROMPT, getSystemPrompt } from "@prompts/system.js";
+import { DEFAULT_SYSTEM_PROMPT, getSystemPrompt } from "@prompts/index.js";
 import { describe, expect, it } from "vitest";
 
 describe("Prompts Module Suite", () => {

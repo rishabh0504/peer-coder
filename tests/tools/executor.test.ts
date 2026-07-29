@@ -62,4 +62,44 @@ describe("src/tools Execution & Index Export Coverage", () => {
     expect(result.output).toBeDefined();
     consoleSpy.mockRestore();
   });
+
+  it("should cover path printing and JSON content extraction branch", async () => {
+    const { toolsMap } = await import("../../src/tools/registry.js");
+    const readFileTool = toolsMap.get("read_file");
+
+    if (readFileTool) {
+      const invokeSpy = vi
+        .spyOn(readFileTool, "invoke")
+        .mockResolvedValue(JSON.stringify({ content: "mocked file content" }));
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      const result = await executeToolCall({
+        name: "read_file",
+        args: { path: "temp_file_for_test.txt" },
+      });
+
+      expect(result.output).toContain("mocked file content");
+      invokeSpy.mockRestore();
+      consoleSpy.mockRestore();
+    }
+  });
+
+  it("should cover raw text output that fails JSON parsing", async () => {
+    const { toolsMap } = await import("../../src/tools/registry.js");
+    const infoTool = toolsMap.get("workspace_info");
+
+    if (infoTool) {
+      const invokeSpy = vi.spyOn(infoTool, "invoke").mockResolvedValue("Plain raw string output");
+      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+
+      const result = await executeToolCall({
+        name: "workspace_info",
+        args: {},
+      });
+
+      expect(result.output).toBe("Plain raw string output");
+      invokeSpy.mockRestore();
+      consoleSpy.mockRestore();
+    }
+  });
 });

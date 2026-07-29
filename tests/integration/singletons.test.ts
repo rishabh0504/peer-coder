@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { getSupabaseInstance, supabaseClient } from "../../src/integration/database/index.js";
 import { getRedisInstance, redisClient } from "../../src/integration/redis/index.js";
 import { getEmbeddingsInstance, vectorEmbeddings } from "../../src/integration/vectors/index.js";
+import "../../src/integration/index.js";
 
 describe("Singleton clients unit test", () => {
   it("should ensure Redis client is a singleton", () => {
