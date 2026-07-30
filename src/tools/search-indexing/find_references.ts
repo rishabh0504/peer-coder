@@ -2,11 +2,13 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools";
 import { defaultToolRuntime } from "@runtime/tool_runtime.js";
 import { ToolExecutionError } from "@utils/errors.js";
-import type { WorkspaceContext } from "@workspace/workspace_context.js";
+import type { WorkspaceContext } from "@workspace/context/workspace_context.js";
 import { z } from "zod";
+import { getWorkspaceGraph } from "../../workspace/graph/index.js";
 
 export const findReferencesInputSchema = z.object({
   symbol: z.string().min(1).describe("Target symbol name to find references for"),
+  workspacePath: z.string().optional().describe("Workspace root (defaults to cwd)"),
 });
 
 export const findReferencesTool = tool(
@@ -15,10 +17,19 @@ export const findReferencesTool = tool(
     const response = await defaultToolRuntime.execute(
       "find_references",
       input,
-      async (_context, args) => {
+      async (context, args) => {
+        const workspacePath =
+          (args as { workspacePath?: string }).workspacePath ||
+          context.workspaceRoot ||
+          process.cwd();
+        const graph = getWorkspaceGraph();
+        const references = await graph.findReferences(
+          workspacePath,
+          (args as { symbol: string }).symbol,
+        );
         return {
-          symbol: args.symbol,
-          references: [],
+          symbol: (args as { symbol: string }).symbol,
+          references,
         };
       },
       contextOverride,
@@ -36,7 +47,7 @@ export const findReferencesTool = tool(
   },
   {
     name: "find_references",
-    description: "Find all references of symbol across workspace.",
+    description: "Find references of a symbol across any language (L3 edges + ripgrep).",
     schema: findReferencesInputSchema,
   },
 );

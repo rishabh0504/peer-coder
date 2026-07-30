@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { gitDiffTool } from "@tools/git/git_diff.js";
 import { gitStatusTool } from "@tools/git/git_status.js";
-import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
+import { createDefaultWorkspaceContext } from "@workspace/context/workspace_context.js";
 import { describe, expect, it } from "vitest";
 
 describe("git Tools Suite", () => {

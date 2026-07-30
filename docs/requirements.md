@@ -9,8 +9,8 @@ I'd break it into roughly these chapters:
 3. Complete Agent Workflow (end-to-end)
 4. Every Agent and its Responsibilities
 5. LangGraph Orchestration Design
-6. Memory Architecture
-7. Repository Intelligence
+6. Memory Architecture — **frozen:** see [`memory-lld.md`](./memory-lld.md)
+7. Repository Intelligence / Agent Build — **bottom-up roadmap:** see [`agent-build-roadmap.md`](./agent-build-roadmap.md)
 8. Context Engineering Pipeline
 9. Planning Engine
 10. Task Scheduling & Parallelism
@@ -26,6 +26,32 @@ I'd break it into roughly these chapters:
 20. Deployment Architecture
 21. Failure Recovery
 22. Extensibility & Plugin System
+
+---
+
+## Chapter 6 — Memory Architecture (pointer)
+
+Peer-Coder memory is an **agent state architecture** (cognitive substrate), not a RAG-first module.
+
+| Principle | Detail |
+|-----------|--------|
+| Deterministic-first | 80–95% of recalls via L0–L3 / L5; LLM never searches memory |
+| L0–L5 cache | Execution → Task → Code intel (files/symbols/edges) → Repo facts → User prefs → Experience (vector last) |
+| Memory Planner | Rule/extractor based — **never** the main LLM |
+| Dual context | Cached system memory (L2+L5) + dynamic task memory (L0+L1+L3+L4) for prompt caching |
+| Schema | [`supabase/migrations/`](../supabase/migrations/) (`001`–`003`) |
+
+**Full LLD:** [`docs/memory-lld.md`](./memory-lld.md)
+
+---
+
+## Agent build order (pointer)
+
+Peer-Coder is built **bottom-up**: shared memory → Code Intel → Planning → Implementation → Verification → **Orchestrator last**.
+
+Modularity is compulsory. Stages, CLI commands, contracts, and exit criteria:
+
+**[`docs/agent-build-roadmap.md`](./agent-build-roadmap.md)**
 
 Each chapter would include:
 
@@ -43,3 +69,67 @@ Each chapter would include:
 This will likely be **80–120+ pages of Markdown** with dozens of Mermaid diagrams if done properly. That's far beyond what fits in a single chat response.
 
 Given your long-term objective of building a serious production-grade coding agent and preparing at a Staff Engineer level, I think that's the right level of detail rather than trying to compress it into one message.
+
+
+
+```mermaid
+flowchart TD
+    User([User]) --> TerminalCLI[Terminal CLI]
+    TerminalCLI --> SessionController[Session Controller]
+    SessionController --> AgentRuntime[Agent Runtime]
+    AgentRuntime --> LangGraph{LangGraph Orchestrator}
+
+    LangGraph --> EnvAnalyzer[Environment Analyzer]
+    LangGraph --> ContextEngine[Context Engine]
+    LangGraph --> MemorySystem[Memory System]
+
+    EnvAnalyzer --> CodeIntel[Code Intelligence]
+    ContextEngine --> CodeIntel
+    MemorySystem --> CodeIntel
+
+    CodeIntel --> Planner[Planner]
+    Planner --> TaskScheduler[Task Scheduler]
+
+    TaskScheduler --> Executor[Executor]
+    TaskScheduler --> ParallelWorkers[Parallel Workers]
+
+    Executor --> ChangeManager[Change Manager]
+    ParallelWorkers --> ChangeManager
+
+    ChangeManager --> PolicyEngine[Policy Engine]
+    PolicyEngine --> ToolRuntime[Tool Runtime]
+
+    subgraph Tools [Available Subsystems]
+        direction LR
+        Filesystem["Filesystem<br>(AST/LSP/Tests)"]
+        Terminal["Terminal<br>(Docker/MCP)"]
+        Git["Git<br>(Browser/Search)"]
+    end
+
+    ToolRuntime --> Filesystem
+    ToolRuntime --> Terminal
+    ToolRuntime --> Git
+
+    Filesystem --> ValidationPipeline[Validation Pipeline]
+    Terminal --> ValidationPipeline
+    Git --> ValidationPipeline
+
+    ValidationPipeline --> ReflectionLoop[Reflection Loop]
+    ReflectionLoop --> ApprovalGate{Approval Gate}
+    ApprovalGate -- Approved --> Done([Done])
+    ApprovalGate -- Needs Fixes --> ReflectionLoop
+```
+
+
+
+
+
+I would freeze the cognitive layer at these seven roles:
+
+Orchestrator Agent
+Environment Analyzer Agent
+Code Analysis Agent
+Planning Agent
+Implementation Agent
+Validation Agent
+Reflection Agent

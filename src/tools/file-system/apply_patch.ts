@@ -3,7 +3,7 @@ import { tool } from "@langchain/core/tools";
 import { defaultToolRuntime } from "@runtime/tool_runtime.js";
 import { workspaceFileSystem } from "@services/filesystem/filesystem.service.js";
 import { ToolExecutionError } from "@utils/errors.js";
-import type { WorkspaceContext } from "@workspace/workspace_context.js";
+import type { WorkspaceContext } from "@workspace/context/workspace_context.js";
 import { z } from "zod";
 
 export const applyPatchInputSchema = z.object({

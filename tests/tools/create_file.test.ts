@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createFileTool } from "@tools/file-system/create_file.js";
-import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
+import { createDefaultWorkspaceContext } from "@workspace/context/workspace_context.js";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("create_file Tool Edge Cases", () => {

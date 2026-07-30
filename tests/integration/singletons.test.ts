@@ -37,7 +37,7 @@ vi.mock("@langchain/ollama", () => {
   };
 });
 
-vi.mock("../../src/config/env.js", () => {
+vi.mock("../../src/core/config/env.js", () => {
   return {
     loadEnv: () => ({
       NODE_ENV: "test",
@@ -79,7 +79,7 @@ describe("Singleton clients unit test", () => {
 
   it("should cover Redis event handlers for error and connect", async () => {
     vi.resetModules();
-    vi.doMock("../../src/config/env.js", () => ({
+    vi.doMock("../../src/core/config/env.js", () => ({
       loadEnv: () => ({
         REDIS_HOST: "127.0.0.1",
         REDIS_PORT: 6379,
@@ -90,7 +90,7 @@ describe("Singleton clients unit test", () => {
     const { getRedisInstance: getRedisInstanceFresh, redisClient: freshRedisClient } = await import(
       "../../src/integration/redis/index.js"
     );
-    const { logger } = await import("../../src/utils/logger.js");
+    const { logger } = await import("../../src/core/utils/logger.js");
 
     const loggerErrorSpy = vi.spyOn(logger, "error").mockImplementation(() => {});
     const loggerInfoSpy = vi.spyOn(logger, "info").mockImplementation(() => {});
@@ -107,7 +107,7 @@ describe("Singleton clients unit test", () => {
     expect(loggerInfoSpy).toHaveBeenCalledWith("Redis Client Connected Successfully");
 
     await freshRedisClient.disconnect();
-    vi.doUnmock("../../src/config/env.js");
+    vi.doUnmock("../../src/core/config/env.js");
     vi.resetModules();
   });
 
@@ -123,7 +123,7 @@ describe("Singleton clients unit test", () => {
 
   it("should throw an error if Supabase credentials are missing", async () => {
     vi.resetModules();
-    vi.doMock("../../src/config/env.js", () => ({
+    vi.doMock("../../src/core/config/env.js", () => ({
       loadEnv: () => ({
         SUPABASE_URL: undefined,
         SUPABASE_ANON_KEY: undefined,
@@ -139,7 +139,7 @@ describe("Singleton clients unit test", () => {
       /Supabase credentials are not configured/,
     );
 
-    vi.doMock("../../src/config/env.js", () => ({
+    vi.doMock("../../src/core/config/env.js", () => ({
       loadEnv: () => ({
         NODE_ENV: "test",
         LOG_LEVEL: "info",

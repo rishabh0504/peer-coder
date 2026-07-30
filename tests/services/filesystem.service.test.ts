@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { workspaceFileSystem } from "@services/filesystem/filesystem.service.js";
-import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
+import { createDefaultWorkspaceContext } from "@workspace/context/workspace_context.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("WorkspaceFileSystem Service", () => {
@@ -53,7 +53,7 @@ describe("WorkspaceFileSystem Service", () => {
 
   it("should throw error when reading non-existent file", async () => {
     const filePath = "non_existent.txt";
-    const guardModule = await import("../../src/workspace/workspace_guard.js");
+    const guardModule = await import("../../src/workspace/context/workspace_guard.js");
     const safetySpy = vi.spyOn(guardModule, "validateFileReadSafety").mockResolvedValue();
 
     await expect(workspaceFileSystem.readFile(context, filePath)).rejects.toThrow(
@@ -67,7 +67,7 @@ describe("WorkspaceFileSystem Service", () => {
     const dirPath = "some_sub_dir";
     await fs.mkdir(path.resolve(testDir, dirPath), { recursive: true });
 
-    const guardModule = await import("../../src/workspace/workspace_guard.js");
+    const guardModule = await import("../../src/workspace/context/workspace_guard.js");
     const safetySpy = vi.spyOn(guardModule, "validateFileReadSafety").mockResolvedValue();
 
     await expect(workspaceFileSystem.readFile(context, dirPath)).rejects.toThrow(

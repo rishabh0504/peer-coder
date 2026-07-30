@@ -1,6 +1,6 @@
 import { ToolRuntime } from "@runtime/tool_runtime.js";
-import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
-import { defaultWorkspaceLockManager } from "@workspace/workspace_lock.js";
+import { createDefaultWorkspaceContext } from "@workspace/context/workspace_context.js";
+import { defaultWorkspaceLockManager } from "@workspace/context/workspace_lock.js";
 import { describe, expect, it } from "vitest";
 
 describe("ToolRuntime Pipeline Edge Cases", () => {
