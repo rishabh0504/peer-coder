@@ -1,6 +1,6 @@
 import type { AgentDefinition } from "../domain/agent_definition.js";
 import type { ToolDefinition } from "../domain/tool_definition.js";
-import { ToolPermission, isPermissionGranted } from "./permission.js";
+import { type ToolPermission, isPermissionGranted } from "./permission.js";
 
 export class ToolPolicyEngine {
   private matchGlob(pattern: string, toolName: string): boolean {
@@ -20,7 +20,7 @@ export class ToolPolicyEngine {
       if (isPermissionGranted(allowed.permission as ToolPermission, requested)) return;
       throw new Error(
         `Agent "${agent.id}" has "${allowed.permission}" on "${tool.name}" ` +
-        `but tool requires "${requested}". Check PERMISSION_MATRIX.`,
+          `but tool requires "${requested}". Check PERMISSION_MATRIX.`,
       );
     }
     throw new Error(`Tool "${tool.name}" not in allowedTools for agent "${agent.id}".`);

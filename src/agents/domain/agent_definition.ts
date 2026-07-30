@@ -13,13 +13,13 @@ export type AgentStatus = "experimental" | "stable" | "deprecated" | "disabled";
 
 export interface AgentCapabilityContract {
   name: string;
-  inputType: string;   // e.g. "WorkspaceContext"
-  outputType: string;  // e.g. "WorkspaceGraph"
+  inputType: string; // e.g. "WorkspaceContext"
+  outputType: string; // e.g. "WorkspaceGraph"
 }
 
 export interface AgentToolPermission {
-  name: string;        // glob: "filesystem.*", "git.read", "*"
-  permission: string;  // "read" | "write" | "execute" | "network"
+  name: string; // glob: "filesystem.*", "git.read", "*"
+  permission: string; // "read" | "write" | "execute" | "network"
 }
 
 export interface AgentDependency {
@@ -38,8 +38,8 @@ export interface AgentRuntimeConfig {
 export interface AgentDefinition {
   id: string;
   name: string;
-  version: string;        // semver: "1.2.0"
-  aliases?: string[];     // alternate lookup names for LLM planners
+  version: string; // semver: "1.2.0"
+  aliases?: string[]; // alternate lookup names for LLM planners
   description: string;
   category: AgentCategory;
   status: AgentStatus;
@@ -67,10 +67,14 @@ export function validateAgentDefinition(def: AgentDefinition): void {
   if (!VALID_STATUSES.includes(def.status)) {
     throw new Error(`AgentDefinition: invalid status "${def.status}".`);
   }
-  if (!Array.isArray(def.capabilities)) throw new Error("AgentDefinition: capabilities must be an array.");
-  if (!Array.isArray(def.allowedTools)) throw new Error("AgentDefinition: allowedTools must be an array.");
-  if (!Array.isArray(def.dependencies)) throw new Error("AgentDefinition: dependencies must be an array.");
-  if (!def.runtime || typeof def.runtime !== "object") throw new Error("AgentDefinition: runtime config required.");
+  if (!Array.isArray(def.capabilities))
+    throw new Error("AgentDefinition: capabilities must be an array.");
+  if (!Array.isArray(def.allowedTools))
+    throw new Error("AgentDefinition: allowedTools must be an array.");
+  if (!Array.isArray(def.dependencies))
+    throw new Error("AgentDefinition: dependencies must be an array.");
+  if (!def.runtime || typeof def.runtime !== "object")
+    throw new Error("AgentDefinition: runtime config required.");
 }
 
 /** Deep-freeze an AgentDefinition to prevent mutation after registration */

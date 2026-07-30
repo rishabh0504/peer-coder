@@ -1,19 +1,22 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { AgentRuntime } from "../../../src/agents/runtime/agent_runtime.js";
-import { AgentRegistry } from "../../../src/agents/registry/agent_registry.js";
-import { AgentHandlerRegistry } from "../../../src/agents/handlers/handler_registry.js";
-import { AgentExecutionTracker } from "../../../src/agents/runtime/execution_tracker.js";
-import { MemoryExecutionStore } from "../../../src/agents/runtime/execution_store.js";
-import { MemoryEventStore } from "../../../src/agents/runtime/event_store.js";
-import { AgentLifecycleManager } from "../../../src/agents/core/lifecycle.js";
-import { ToolPolicyEngine } from "../../../src/agents/security/tool_policy.js";
-import { ToolRegistry } from "../../../src/agents/domain/tool_definition.js";
-import { AgentCategory, type AgentDefinition } from "../../../src/agents/domain/agent_definition.js";
 import { AgentOutcome } from "../../../src/agents/core/agent_result.js";
-import { ToolPermission } from "../../../src/agents/security/permission.js";
+import { AgentLifecycleManager } from "../../../src/agents/core/lifecycle.js";
+import {
+  AgentCategory,
+  type AgentDefinition,
+} from "../../../src/agents/domain/agent_definition.js";
+import { ToolRegistry } from "../../../src/agents/domain/tool_definition.js";
+import { AgentHandlerRegistry } from "../../../src/agents/handlers/handler_registry.js";
 import type { AgentHandler } from "../../../src/agents/handlers/handler_registry.js";
+import { AgentRegistry } from "../../../src/agents/registry/agent_registry.js";
+import { AgentRuntime } from "../../../src/agents/runtime/agent_runtime.js";
+import { MemoryEventStore } from "../../../src/agents/runtime/event_store.js";
+import { MemoryExecutionStore } from "../../../src/agents/runtime/execution_store.js";
+import { AgentExecutionTracker } from "../../../src/agents/runtime/execution_tracker.js";
 import type { AgentMiddleware } from "../../../src/agents/runtime/middleware.js";
+import { ToolPermission } from "../../../src/agents/security/permission.js";
+import { ToolPolicyEngine } from "../../../src/agents/security/tool_policy.js";
 
 describe("AgentRuntime", () => {
   let registry: AgentRegistry;
@@ -135,11 +138,18 @@ describe("AgentRuntime", () => {
     handlers.register("disabled_agent", "1.0.0", mockHandler);
 
     expect(() =>
-      runtime.execute("disabled_agent", {}, {
-        sessionId: "s",
-        metadata: {},
-        container: { tools: { execute: vi.fn() }, memory: { get: vi.fn(), set: vi.fn(), delete: vi.fn() } },
-      }),
+      runtime.execute(
+        "disabled_agent",
+        {},
+        {
+          sessionId: "s",
+          metadata: {},
+          container: {
+            tools: { execute: vi.fn() },
+            memory: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
+          },
+        },
+      ),
     ).toThrow("is disabled");
   });
 
@@ -178,6 +188,7 @@ describe("AgentRuntime", () => {
   });
 
   it("should isolate lifecycle hook errors and not corrupt execution flow", async () => {
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     const faultyHooks: AgentHandler = {
       execute: async () => ({
         outcome: AgentOutcome.SUCCESS,
@@ -202,9 +213,14 @@ describe("AgentRuntime", () => {
       },
     };
 
-    const handle = runtime.execute("test_agent", { field: "test" }, context);
-    const result = await handle.result();
-    expect(result.outcome).toBe(AgentOutcome.SUCCESS); // still successful!
+    try {
+      const handle = runtime.execute("test_agent", { field: "test" }, context);
+      const result = await handle.result();
+      expect(result.outcome).toBe(AgentOutcome.SUCCESS); // still successful!
+      expect(errorSpy).toHaveBeenCalled();
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 
   it("should execute middleware ordered by descending priority", async () => {
@@ -252,8 +268,12 @@ describe("AgentRuntime", () => {
     const memoryStore = new Map<string, any>();
     const scopedMemory = {
       get: async (key: string) => memoryStore.get(key),
-      set: async (key: string, val: any) => { memoryStore.set(key, val); },
-      delete: async (key: string) => { memoryStore.delete(key); },
+      set: async (key: string, val: any) => {
+        memoryStore.set(key, val);
+      },
+      delete: async (key: string) => {
+        memoryStore.delete(key);
+      },
     };
 
     const memoryAgent: AgentHandler = {

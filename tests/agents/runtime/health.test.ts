@@ -1,10 +1,13 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
-import { AgentRegistry } from "../../../src/agents/registry/agent_registry.js";
-import { AgentHandlerRegistry } from "../../../src/agents/handlers/handler_registry.js";
-import { checkAgentHealth } from "../../../src/agents/runtime/health.js";
-import { AgentCategory, type AgentDefinition } from "../../../src/agents/domain/agent_definition.js";
 import { AgentOutcome } from "../../../src/agents/core/agent_result.js";
+import {
+  AgentCategory,
+  type AgentDefinition,
+} from "../../../src/agents/domain/agent_definition.js";
+import { AgentHandlerRegistry } from "../../../src/agents/handlers/handler_registry.js";
+import { AgentRegistry } from "../../../src/agents/registry/agent_registry.js";
+import { checkAgentHealth } from "../../../src/agents/runtime/health.js";
 
 describe("checkAgentHealth", () => {
   let registry: AgentRegistry;
@@ -61,7 +64,7 @@ describe("checkAgentHealth", () => {
     const health = checkAgentHealth(registry, handlers);
     const agentHealth = health.find((h) => h.agentId === "invalid_agent");
     expect(agentHealth).toBeDefined();
-    expect(agentHealth!.status).toBe("missing-handler"); // missing handler + invalid schema issues
-    expect(agentHealth!.issues).toContain("inputSchema is not a valid Zod schema");
+    expect(agentHealth?.status).toBe("missing-handler"); // missing handler + invalid schema issues
+    expect(agentHealth?.issues).toContain("inputSchema is not a valid Zod schema");
   });
 });

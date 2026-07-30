@@ -1,5 +1,5 @@
-import type { AgentExecutionContext } from "../core/execution_context.js";
 import type { AgentResult } from "../core/agent_result.js";
+import type { AgentExecutionContext } from "../core/execution_context.js";
 
 export interface AgentMiddlewareContext {
   agentId: string;

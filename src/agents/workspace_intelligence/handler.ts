@@ -1,8 +1,8 @@
-import type { AgentHandler } from "../handlers/handler_registry.js";
 import type { AgentResult } from "../core/agent_result.js";
-import type { AgentExecutionContext } from "../core/execution_context.js";
-import { workspaceIntelligenceGraph } from "./graph.js";
 import { AgentOutcome } from "../core/agent_result.js";
+import type { AgentExecutionContext } from "../core/execution_context.js";
+import type { AgentHandler } from "../handlers/handler_registry.js";
+import { workspaceIntelligenceGraph } from "./graph.js";
 
 export const workspaceIntelligenceHandler: AgentHandler = {
   async execute(state: any, context: AgentExecutionContext): Promise<AgentResult> {

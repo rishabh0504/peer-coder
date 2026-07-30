@@ -1,5 +1,5 @@
-import { workspaceInputSchema, workspaceOutputSchema } from "./schema.js";
 import { AgentCategory, type AgentDefinition } from "../domain/agent_definition.js";
+import { workspaceInputSchema, workspaceOutputSchema } from "./schema.js";
 
 export const workspaceIntelligenceDefinition: AgentDefinition = {
   id: "workspace_intelligence",

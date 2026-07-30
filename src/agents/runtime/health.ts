@@ -1,5 +1,5 @@
-import type { AgentRegistry } from "../registry/agent_registry.js";
 import type { AgentHandlerRegistry } from "../handlers/handler_registry.js";
+import type { AgentRegistry } from "../registry/agent_registry.js";
 
 export type AgentHealthStatus = "healthy" | "missing-handler" | "missing-tools" | "invalid-schema";
 

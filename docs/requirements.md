@@ -9,8 +9,8 @@ I'd break it into roughly these chapters:
 3. Complete Agent Workflow (end-to-end)
 4. Every Agent and its Responsibilities
 5. LangGraph Orchestration Design
-6. Memory Architecture
-7. Repository Intelligence
+6. Memory Architecture — **frozen:** see [`memory-lld.md`](./memory-lld.md)
+7. Repository Intelligence / Agent Build — **bottom-up roadmap:** see [`agent-build-roadmap.md`](./agent-build-roadmap.md)
 8. Context Engineering Pipeline
 9. Planning Engine
 10. Task Scheduling & Parallelism
@@ -26,6 +26,32 @@ I'd break it into roughly these chapters:
 20. Deployment Architecture
 21. Failure Recovery
 22. Extensibility & Plugin System
+
+---
+
+## Chapter 6 — Memory Architecture (pointer)
+
+Peer-Coder memory is an **agent state architecture** (cognitive substrate), not a RAG-first module.
+
+| Principle | Detail |
+|-----------|--------|
+| Deterministic-first | 80–95% of recalls via L0–L3 / L5; LLM never searches memory |
+| L0–L5 cache | Execution → Task → Code intel (files/symbols/edges) → Repo facts → User prefs → Experience (vector last) |
+| Memory Planner | Rule/extractor based — **never** the main LLM |
+| Dual context | Cached system memory (L2+L5) + dynamic task memory (L0+L1+L3+L4) for prompt caching |
+| Schema | [`supabase/migrations/`](../supabase/migrations/) (`001`–`003`) |
+
+**Full LLD:** [`docs/memory-lld.md`](./memory-lld.md)
+
+---
+
+## Agent build order (pointer)
+
+Peer-Coder is built **bottom-up**: shared memory → Code Intel → Planning → Implementation → Verification → **Orchestrator last**.
+
+Modularity is compulsory. Stages, CLI commands, contracts, and exit criteria:
+
+**[`docs/agent-build-roadmap.md`](./agent-build-roadmap.md)**
 
 Each chapter would include:
 

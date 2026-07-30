@@ -1,9 +1,16 @@
-import { agentRegistry } from "../registry/agent_registry.js";
+import type { AgentDefinition } from "../domain/agent_definition.js";
 import { agentHandlerRegistry } from "../handlers/handler_registry.js";
+import type { AgentHandler } from "../handlers/handler_registry.js";
+import { agentRegistry } from "../registry/agent_registry.js";
 import { capabilityRegistry } from "../registry/capability_registry.js";
 import { checkAgentHealth } from "../runtime/health.js";
-import type { AgentDefinition } from "../domain/agent_definition.js";
-import type { AgentHandler } from "../handlers/handler_registry.js";
+import { codeIntelligenceModule } from "./code_intelligence.js";
+import { debuggingModule } from "./debugging.js";
+import { implementationModule } from "./implementation.js";
+import { orchestratorModule } from "./orchestrator.js";
+import { planningModule } from "./planning.js";
+import { researchModule } from "./research.js";
+import { verificationModule } from "./verification.js";
 import { workspaceModule } from "./workspace.js";
 
 export interface RegisteredAgent {
@@ -29,8 +36,14 @@ export function bootstrapAgentRegistry(): void {
   if (bootstrapped) return;
   bootstrapped = true;
   registerModule(workspaceModule);
+  registerModule(codeIntelligenceModule);
+  registerModule(researchModule);
+  registerModule(planningModule);
+  registerModule(implementationModule);
+  registerModule(verificationModule);
+  registerModule(debuggingModule);
+  registerModule(orchestratorModule);
 
-  // Health check at boot — warns about missing handlers/schemas
   const health = checkAgentHealth(agentRegistry, agentHandlerRegistry);
   for (const h of health) {
     if (h.status !== "healthy") {

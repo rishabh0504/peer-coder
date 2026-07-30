@@ -13,8 +13,8 @@ export enum ToolPermission {
  * NETWORK is isolated — does NOT escalate to/from filesystem permissions
  */
 export const PERMISSION_MATRIX: Record<ToolPermission, ToolPermission[]> = {
-  [ToolPermission.READ]:    [ToolPermission.READ],
-  [ToolPermission.WRITE]:   [ToolPermission.READ, ToolPermission.WRITE],
+  [ToolPermission.READ]: [ToolPermission.READ],
+  [ToolPermission.WRITE]: [ToolPermission.READ, ToolPermission.WRITE],
   [ToolPermission.EXECUTE]: [ToolPermission.READ, ToolPermission.WRITE, ToolPermission.EXECUTE],
   [ToolPermission.NETWORK]: [ToolPermission.NETWORK],
 };

@@ -1,15 +1,21 @@
-import type { AgentRegistry } from "../registry/agent_registry.js";
-import type { AgentHandlerRegistry } from "../handlers/handler_registry.js";
-import type { AgentExecutionTracker } from "./execution_tracker.js";
-import type { AgentLifecycleManager } from "../core/lifecycle.js";
-import type { ToolPolicyEngine } from "../security/tool_policy.js";
-import type { ToolRegistry } from "../domain/tool_definition.js";
-import type { AgentMiddleware } from "./middleware.js";
-import type { AgentExecutionContext } from "../core/execution_context.js";
-import type { AgentExecutionResult } from "../core/agent_result.js";
-import { buildMiddlewareChain } from "./middleware.js";
 import { createExecutionId, createTraceId } from "../../core/utils/id_generator.js";
+import {
+  type ApprovalGate,
+  createApprovalGate,
+  requiresApproval,
+} from "../../orchestration/approval_gate.js";
+import type { AgentExecutionResult } from "../core/agent_result.js";
 import { AgentOutcome } from "../core/agent_result.js";
+import type { AgentExecutionContext } from "../core/execution_context.js";
+import type { AgentLifecycleManager } from "../core/lifecycle.js";
+import type { ToolRegistry } from "../domain/tool_definition.js";
+import type { AgentHandlerRegistry } from "../handlers/handler_registry.js";
+import type { AgentRegistry } from "../registry/agent_registry.js";
+import { ToolPermission } from "../security/permission.js";
+import type { ToolPolicyEngine } from "../security/tool_policy.js";
+import type { AgentExecutionTracker } from "./execution_tracker.js";
+import type { AgentMiddleware } from "./middleware.js";
+import { buildMiddlewareChain } from "./middleware.js";
 
 export interface AgentExecutionHandle {
   id: string;
@@ -19,6 +25,7 @@ export interface AgentExecutionHandle {
 
 export class AgentRuntime {
   private middlewares: AgentMiddleware[] = [];
+  private approvalGate: ApprovalGate = createApprovalGate();
 
   constructor(
     private readonly registry: AgentRegistry,
@@ -28,6 +35,10 @@ export class AgentRuntime {
     private readonly policy: ToolPolicyEngine,
     private readonly toolRegistry: ToolRegistry,
   ) {}
+
+  setApprovalGate(gate: ApprovalGate): void {
+    this.approvalGate = gate;
+  }
 
   use(middleware: AgentMiddleware): void {
     this.middlewares.push(middleware);
@@ -48,7 +59,15 @@ export class AgentRuntime {
 
     // Race-free: execution starts in microtask queue AFTER handle is returned
     const resultPromise = Promise.resolve().then(() =>
-      this.run(agentId, state, context, executionId, traceId, controller, options?.parentExecutionId),
+      this.run(
+        agentId,
+        state,
+        context,
+        executionId,
+        traceId,
+        controller,
+        options?.parentExecutionId,
+      ),
     );
 
     return {
@@ -83,10 +102,17 @@ export class AgentRuntime {
     // Session-scoped memory isolation: ${sessionId}/${namespace}/${key}
     const memNs = definition.runtime.memoryPolicy?.namespace ?? definition.id;
     const scopedMemory = {
-      get: (key: string) => baseContext.container.memory.get(`${baseContext.sessionId}/${memNs}/${key}`),
-      set: (key: string, val: unknown) => baseContext.container.memory.set(`${baseContext.sessionId}/${memNs}/${key}`, val),
-      delete: (key: string) => baseContext.container.memory.delete(`${baseContext.sessionId}/${memNs}/${key}`),
+      get: (key: string) =>
+        baseContext.container.memory.get(`${baseContext.sessionId}/${memNs}/${key}`),
+      set: (key: string, val: unknown) =>
+        baseContext.container.memory.set(`${baseContext.sessionId}/${memNs}/${key}`, val),
+      delete: (key: string) =>
+        baseContext.container.memory.delete(`${baseContext.sessionId}/${memNs}/${key}`),
     };
+
+    const stateObjEarly = validatedState as Record<string, unknown>;
+    const workspacePath =
+      typeof stateObjEarly.workspacePath === "string" ? stateObjEarly.workspacePath : process.cwd();
 
     // Tool intercept: policy uses tool.requiredPermission, not hardcoded EXECUTE
     const scopedTools = {
@@ -96,16 +122,36 @@ export class AgentRuntime {
 
         this.policy.validate(definition, toolDef);
 
-        await this.lifecycle.safeCall("beforeToolCall", () =>
-          handler.hooks?.beforeToolCall?.(toolName, args) ?? Promise.resolve(),
+        const perm = toolDef.requiredPermission;
+        if (
+          requiresApproval(toolName, String(perm)) &&
+          (perm === ToolPermission.WRITE || perm === ToolPermission.EXECUTE)
+        ) {
+          const ok = await this.approvalGate.approve({
+            toolName,
+            permission: String(perm),
+            args,
+          });
+          if (!ok) {
+            throw new Error(`Tool "${toolName}" denied by approval gate.`);
+          }
+        }
+
+        await this.lifecycle.safeCall(
+          "beforeToolCall",
+          () => handler.hooks?.beforeToolCall?.(toolName, args) ?? Promise.resolve(),
         );
         await this.tracker.emitToolStarted(executionId, traceId, toolName, args);
 
-        const result = await toolDef.execute(args, { signal: opts?.signal ?? controller.signal });
+        const result = await toolDef.execute(args, {
+          signal: opts?.signal ?? controller.signal,
+          workspacePath,
+        });
 
         await this.tracker.emitToolCompleted(executionId, traceId, toolName, result);
-        await this.lifecycle.safeCall("afterToolCall", () =>
-          handler.hooks?.afterToolCall?.(toolName, result) ?? Promise.resolve(),
+        await this.lifecycle.safeCall(
+          "afterToolCall",
+          () => handler.hooks?.afterToolCall?.(toolName, result) ?? Promise.resolve(),
         );
 
         return result;
@@ -121,33 +167,89 @@ export class AgentRuntime {
         ...baseContext.container,
         tools: scopedTools,
         memory: scopedMemory,
+        memoryManager: baseContext.container.memoryManager,
         llm: baseContext.container.llm
           ? {
-              generate: (prompt, opts) =>
-                baseContext.container.llm!.generate(prompt, {
+              generate: (prompt, opts) => {
+                const llm = baseContext.container.llm;
+                if (!llm) {
+                  return Promise.reject(new Error("LLM service unavailable."));
+                }
+                return llm.generate(prompt, {
                   ...opts,
                   signal: opts?.signal ?? controller.signal,
-                }),
+                });
+              },
             }
           : undefined,
       },
     };
 
+    // Stage 0: bind L0 execution + attach dual memory pack when MemoryManager present
+    const mm = fullContext.container.memoryManager as
+      | {
+          bindExecution: (s: unknown) => void;
+          planAndRecall: (req: string, ctx: unknown) => Promise<unknown>;
+        }
+      | undefined;
+    const stateObj = stateObjEarly;
+    const goal =
+      typeof stateObj.userRequest === "string"
+        ? stateObj.userRequest
+        : typeof stateObj.query === "string"
+          ? stateObj.query
+          : agentId;
+    const workspaceId = workspacePath;
+    if (mm) {
+      mm.bindExecution({
+        executionId,
+        workspaceId,
+        taskId: typeof stateObj.taskId === "string" ? stateObj.taskId : undefined,
+        goal,
+        currentPlan: [],
+        visitedFiles: [],
+        activeErrors: [],
+        pendingActions: [],
+        currentToolResults: [],
+        updatedAt: new Date().toISOString(),
+      });
+      try {
+        const pack = await mm.planAndRecall(goal, {
+          workspaceId,
+          executionId,
+          taskId: typeof stateObj.taskId === "string" ? stateObj.taskId : undefined,
+          sessionId: baseContext.sessionId,
+        });
+        fullContext.metadata = { ...fullContext.metadata, memory: pack };
+      } catch {
+        // memory recall must not fail the agent
+      }
+    }
+
     await this.tracker.startExecution(
-      executionId, agentId, definition.version,
-      baseContext.sessionId, traceId, parentExecutionId,
+      executionId,
+      agentId,
+      definition.version,
+      baseContext.sessionId,
+      traceId,
+      parentExecutionId,
     );
 
-    await this.lifecycle.safeCall("beforeExecute", () =>
-      handler.hooks?.beforeExecute?.(fullContext) ?? Promise.resolve(),
+    await this.lifecycle.safeCall(
+      "beforeExecute",
+      () => handler.hooks?.beforeExecute?.(fullContext) ?? Promise.resolve(),
     );
 
     const started = Date.now();
 
     try {
       const mwCtx = {
-        agentId, agentVersion: definition.version,
-        executionId, state: validatedState, context: fullContext, parentExecutionId,
+        agentId,
+        agentVersion: definition.version,
+        executionId,
+        state: validatedState,
+        context: fullContext,
+        parentExecutionId,
       };
 
       const chain = buildMiddlewareChain(
@@ -165,14 +267,21 @@ export class AgentRuntime {
         }
       }
 
-      await this.lifecycle.safeCall("afterExecute", () =>
-        handler.hooks?.afterExecute?.(result) ?? Promise.resolve(),
+      await this.lifecycle.safeCall(
+        "afterExecute",
+        () => handler.hooks?.afterExecute?.(result) ?? Promise.resolve(),
       );
 
       const durationMs = Date.now() - started;
       await this.tracker.completeExecution(
-        executionId, traceId, result.telemetry?.toolsUsed ?? [], durationMs,
-        { model: result.telemetry?.model ?? (baseContext.metadata.model as string | undefined), tokensUsed: result.telemetry?.tokensUsed },
+        executionId,
+        traceId,
+        result.telemetry?.toolsUsed ?? [],
+        durationMs,
+        {
+          model: result.telemetry?.model ?? (baseContext.metadata.model as string | undefined),
+          tokensUsed: result.telemetry?.tokensUsed,
+        },
       );
 
       return { ...result, execution: { id: executionId, durationMs } };
@@ -182,7 +291,7 @@ export class AgentRuntime {
 
       await this.lifecycle.safeCall("onError", () =>
         err instanceof Error
-          ? handler.hooks?.onError?.(err) ?? Promise.resolve()
+          ? (handler.hooks?.onError?.(err) ?? Promise.resolve())
           : Promise.resolve(),
       );
 

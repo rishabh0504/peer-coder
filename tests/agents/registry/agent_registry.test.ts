@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { AgentRegistry } from "../../../src/agents/registry/agent_registry.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { AgentCategory } from "../../../src/agents/domain/agent_definition.js";
 import type { AgentDefinition } from "../../../src/agents/domain/agent_definition.js";
+import { AgentRegistry } from "../../../src/agents/registry/agent_registry.js";
 
 describe("AgentRegistry", () => {
   let registry: AgentRegistry;

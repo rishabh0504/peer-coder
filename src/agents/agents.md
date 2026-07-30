@@ -15,22 +15,24 @@ No more renaming after this.
 
 ## 1. Orchestrator Agent
 
-**Role:** Agent manager / workflow controller
+**Role:** Workflow glue only (slim)
 
 Responsibilities:
 
-* Receive user request
-* Decide task type
-* Select workflow
-* Coordinate other agents
-* Maintain task lifecycle
-* Handle approvals
-* Handle retries
-* Decide completion
+* Classify request → workflow (deterministic router)
+* Dispatch child agents via AgentRuntime
+* Record Execution Journal steps
+* Apply failure / research / retry matrix
+* Return OrchestratorResult
+* Maintain coordination only — Task Manager owns L1 lifecycle
+
+Does **not**: edit files, web search, rebuild Workspace Graph, or invent task state.
 
 Tools:
 
-* No direct coding tools
+* No direct coding tools (`allowedTools: []`)
+
+See [`docs/orchestration.md`](../../docs/orchestration.md).
 
 ---
 
@@ -67,26 +69,25 @@ Tools:
 
 ## 3. Code Intelligence Agent
 
-**Role:** Understand the codebase
+**Role:** Understand the codebase (**language-agnostic**)
 
 Responsibilities:
 
 * Find relevant files
 * Find symbols
 * Find references
-* Trace execution paths
-* Understand dependencies
+* Trace imports / edges
 * Build context graph
 * Identify impacted code areas
 * Summarize existing implementation
+
+Parsers are **plugins** (tree-sitter WASM + generic fallback). See [`docs/code-intel.md`](../../docs/code-intel.md).
 
 Tools:
 
 * find_symbol
 * find_references
 * search_code
-* AST
-* LSP
 * read_file
 
 ---
@@ -300,24 +301,28 @@ I would NOT create separate:
 
 Do not build all 10 immediately.
 
+**Bottom-up (locked).** Full stage checklists: [`docs/agent-build-roadmap.md`](../../docs/agent-build-roadmap.md).  
+Memory substrate: [`docs/memory-lld.md`](../../docs/memory-lld.md).
+
 Production order:
 
-### Phase 1 — Core autonomous loop
+### Phase 1 — Core autonomous loop (specialists first)
 
-1. Orchestrator
-2. Workspace Intelligence
-3. Code Intelligence
-4. Planning
-5. Implementation
-6. Test & Verification
+1. Workspace Intelligence (Repository Analysis) ✅
+2. Shared memory + contracts (Stage 0) ✅
+3. Code Intelligence ✅
+4. Planning / Implementation / Verification ✅
+5. Research Agent ✅ (gated into coding path)
+6. Shared substrate: Workspace Graph, Artifacts, Task Manager, Journal, Context Engine ✅
+7. **Orchestrator** ✅ — slim workflow glue (`docs/orchestration.md`)
 
-At this point:
+At that point:
 
 ```
-Understand → Plan → Code → Verify
+Understand → (Research?) → Plan → Code → Verify
 ```
 
-You have a real coding agent.
+coordinated by the Orchestrator. Git and Documentation remain **tools / tasks**, not agents.
 
 ---
 

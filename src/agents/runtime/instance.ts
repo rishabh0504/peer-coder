@@ -1,14 +1,15 @@
-import { AgentRuntime } from "./agent_runtime.js";
-import { agentRegistry } from "../registry/agent_registry.js";
-import { agentHandlerRegistry } from "../handlers/handler_registry.js";
-import { MemoryExecutionStore } from "./execution_store.js";
-import { MemoryEventStore } from "./event_store.js";
-import { AgentExecutionTracker } from "./execution_tracker.js";
 import { agentLifecycleManager } from "../core/lifecycle.js";
-import { toolPolicyEngine } from "../security/tool_policy.js";
 import { toolRegistry } from "../domain/tool_definition.js";
+import { agentHandlerRegistry } from "../handlers/handler_registry.js";
+import { agentRegistry } from "../registry/agent_registry.js";
+import { toolPolicyEngine } from "../security/tool_policy.js";
+import { AgentRuntime } from "./agent_runtime.js";
+import { MemoryEventStore } from "./event_store.js";
+import { MemoryExecutionStore } from "./execution_store.js";
+import { AgentExecutionTracker } from "./execution_tracker.js";
 
 import { allTools } from "../../tools/registry.js";
+import { createDefaultWorkspaceContext } from "../../workspace/context/workspace_context.js";
 import { ToolPermission } from "../security/permission.js";
 
 export const executionStore = new MemoryExecutionStore();
@@ -35,9 +36,14 @@ for (const tool of allTools) {
     name: tool.name,
     description: tool.description,
     requiredPermission: perm,
-    execute: async (args: any, options?: { signal?: AbortSignal }) => {
-      // StructureTool.invoke accepts args. signal can be handled if tool supports it.
-      return (tool as any).invoke(args, { signal: options?.signal });
+    execute: async (args: unknown, options?: { signal?: AbortSignal; workspacePath?: string }) => {
+      const workspaceContext = createDefaultWorkspaceContext(
+        options?.workspacePath ?? process.cwd(),
+      );
+      return (tool as { invoke: (a: unknown, c?: unknown) => Promise<unknown> }).invoke(args, {
+        signal: options?.signal,
+        configurable: { workspaceContext },
+      });
     },
   });
 }

@@ -1,5 +1,5 @@
 import semver from "semver";
-import { validateAgentDefinition, freezeDefinition } from "../domain/agent_definition.js";
+import { freezeDefinition, validateAgentDefinition } from "../domain/agent_definition.js";
 import type { AgentDefinition } from "../domain/agent_definition.js";
 
 export class AgentRegistry {
@@ -30,7 +30,10 @@ export class AgentRegistry {
   get(idOrAlias: string, version?: string): Readonly<AgentDefinition> {
     // Check alias first (only when no explicit version)
     if (!version && this.aliases.has(idOrAlias)) {
-      return this.agents.get(this.aliases.get(idOrAlias)!)!;
+      const aliasKey = this.aliases.get(idOrAlias);
+      const aliased = aliasKey ? this.agents.get(aliasKey) : undefined;
+      if (!aliased) throw new Error(`Agent alias "${idOrAlias}" not found.`);
+      return aliased;
     }
 
     if (version) {
@@ -42,7 +45,9 @@ export class AgentRegistry {
     // Resolve highest semver — semver.rcompare is correct ("1.10.0" > "1.9.0")
     const matches = Array.from(this.agents.values()).filter((a) => a.id === idOrAlias);
     if (matches.length === 0) throw new Error(`Agent "${idOrAlias}" not found.`);
-    return matches.sort((a, b) => semver.rcompare(a.version, b.version))[0]!;
+    const best = matches.sort((a, b) => semver.rcompare(a.version, b.version))[0];
+    if (!best) throw new Error(`Agent "${idOrAlias}" not found.`);
+    return best;
   }
 
   list(): Readonly<AgentDefinition>[] {

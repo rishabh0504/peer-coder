@@ -1,6 +1,6 @@
-import { AgentDefinition } from "../domain/agent_definition.js";
-import { AgentResult } from "./agent_result.js";
-import { AgentExecutionContext } from "./execution_context.js";
+import type { AgentDefinition } from "../domain/agent_definition.js";
+import type { AgentResult } from "./agent_result.js";
+import type { AgentExecutionContext } from "./execution_context.js";
 
 export interface AgentLifecycleHooks {
   beforeExecute?(context: AgentExecutionContext): Promise<void>;

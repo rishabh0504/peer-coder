@@ -1,3 +1,4 @@
+import path from "node:path";
 import { findReferencesTool } from "@tools/search-indexing/find_references.js";
 import { findSymbolTool } from "@tools/search-indexing/find_symbol.js";
 import { searchCodeTool } from "@tools/search-indexing/search_code.js";
@@ -5,10 +6,10 @@ import { createDefaultWorkspaceContext } from "@workspace/context/workspace_cont
 import { describe, expect, it } from "vitest";
 
 describe("search-indexing Tools Suite", () => {
-  const context = createDefaultWorkspaceContext();
+  const fixtureRoot = path.resolve(__dirname, "../fixtures/polyglot/typescript");
+  const context = createDefaultWorkspaceContext(fixtureRoot);
 
   it("should search code using search_code tool (STUB behavior)", async () => {
-    // STUB: replace with real grep test when implemented
     const result = await searchCodeTool.invoke(
       { query: "ToolRuntime" },
       { configurable: { workspaceContext: context } },
@@ -37,21 +38,21 @@ describe("search-indexing Tools Suite", () => {
     ).rejects.toThrow();
   });
 
-  it("should execute find_symbol tool (STUB behavior)", async () => {
-    // STUB: replace with real AST test when implemented
+  it("should find_symbol PaymentService in polyglot TS fixture", async () => {
     const result = await findSymbolTool.invoke(
-      { symbol: "WorkspaceGuard" },
+      { symbol: "PaymentService", workspacePath: fixtureRoot },
       { configurable: { workspaceContext: context } },
     );
 
     const parsed = JSON.parse(result);
-    expect(parsed.symbol).toBe("WorkspaceGuard");
-    expect(parsed.matches).toEqual([]);
+    expect(parsed.symbol).toBe("PaymentService");
+    expect(Array.isArray(parsed.matches)).toBe(true);
+    expect(parsed.matches.length).toBeGreaterThan(0);
   });
 
   it("should validate find_symbol shape", async () => {
     const result = await findSymbolTool.invoke(
-      { symbol: "test" },
+      { symbol: "PaymentService", workspacePath: fixtureRoot },
       { configurable: { workspaceContext: context } },
     );
 
@@ -67,21 +68,21 @@ describe("search-indexing Tools Suite", () => {
     ).rejects.toThrow();
   });
 
-  it("should execute find_references tool (STUB behavior)", async () => {
-    // STUB: replace with real references scanner test when implemented
+  it("should find_references for PaymentService", async () => {
     const result = await findReferencesTool.invoke(
-      { symbol: "PolicyEngine" },
+      { symbol: "PaymentService", workspacePath: fixtureRoot },
       { configurable: { workspaceContext: context } },
     );
 
     const parsed = JSON.parse(result);
-    expect(parsed.symbol).toBe("PolicyEngine");
-    expect(parsed.references).toEqual([]);
+    expect(parsed.symbol).toBe("PaymentService");
+    expect(Array.isArray(parsed.references)).toBe(true);
+    expect(parsed.references.length).toBeGreaterThan(0);
   });
 
   it("should validate find_references shape", async () => {
     const result = await findReferencesTool.invoke(
-      { symbol: "test" },
+      { symbol: "PaymentService", workspacePath: fixtureRoot },
       { configurable: { workspaceContext: context } },
     );
 

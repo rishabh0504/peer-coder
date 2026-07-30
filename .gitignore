@@ -21,6 +21,9 @@ coverage/
 .env.local
 .env.*.local
 
+# Agent local state
+.peer-coder/
+
 # IDE & OS
 .DS_Store
 .idea/

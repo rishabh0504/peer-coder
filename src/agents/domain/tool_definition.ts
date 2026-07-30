@@ -4,7 +4,10 @@ export interface ToolDefinition {
   name: string;
   description?: string;
   requiredPermission: ToolPermission;
-  execute(args: unknown, options?: { signal?: AbortSignal }): Promise<unknown>;
+  execute(
+    args: unknown,
+    options?: { signal?: AbortSignal; workspacePath?: string },
+  ): Promise<unknown>;
 }
 
 export class ToolRegistry {

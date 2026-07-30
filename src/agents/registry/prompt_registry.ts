@@ -8,7 +8,9 @@ export interface PromptEntry {
 export class PromptRegistry {
   private readonly prompts = new Map<string, PromptEntry>();
 
-  private key(id: string, version: string) { return `${id}@${version}`; }
+  private key(id: string, version: string) {
+    return `${id}@${version}`;
+  }
 
   register(entry: PromptEntry): void {
     const k = this.key(entry.id, entry.version);
@@ -24,7 +26,9 @@ export class PromptRegistry {
     }
     const matches = Array.from(this.prompts.values()).filter((p) => p.id === id);
     if (matches.length === 0) throw new Error(`Prompt "${id}" not found.`);
-    return matches.sort((a, b) => b.version.localeCompare(a.version))[0]!;
+    const best = matches.sort((a, b) => b.version.localeCompare(a.version))[0];
+    if (!best) throw new Error(`Prompt "${id}" not found.`);
+    return best;
   }
 }
 

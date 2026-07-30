@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { ToolPolicyEngine } from "../../../src/agents/security/tool_policy.js";
-import { ToolPermission } from "../../../src/agents/security/permission.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { AgentCategory } from "../../../src/agents/domain/agent_definition.js";
 import type { AgentDefinition } from "../../../src/agents/domain/agent_definition.js";
 import type { ToolDefinition } from "../../../src/agents/domain/tool_definition.js";
+import { ToolPermission } from "../../../src/agents/security/permission.js";
+import { ToolPolicyEngine } from "../../../src/agents/security/tool_policy.js";
 
 describe("ToolPolicyEngine", () => {
   let policyEngine: ToolPolicyEngine;
@@ -50,9 +50,7 @@ describe("ToolPolicyEngine", () => {
   it("should reject tool calls matching exact names with insufficient permission levels", () => {
     // READ permission does NOT grant WRITE
     const tool = createMockTool("filesystem.read", ToolPermission.WRITE);
-    expect(() => policyEngine.validate(mockAgent, tool)).toThrow(
-      "but tool requires \"write\""
-    );
+    expect(() => policyEngine.validate(mockAgent, tool)).toThrow('but tool requires "write"');
   });
 
   it("should permit wildcard prefix matches with valid permissions", () => {

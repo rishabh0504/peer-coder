@@ -9,9 +9,7 @@
   "bin": {
     "peer-coder": "./dist/cli.js"
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "packageManager": "pnpm@10.4.0",
   "scripts": {
     "dev": "tsup --watch",
@@ -28,14 +26,7 @@
     "unlink": "pnpm unlink --global peer-coder",
     "prepare": "husky || true"
   },
-  "keywords": [
-    "cli",
-    "template",
-    "typescript",
-    "node",
-    "commander",
-    "clack"
-  ],
+  "keywords": ["cli", "template", "typescript", "node", "commander", "clack"],
   "author": "Rishabh Tiwari(rishabh.tiwari0504@gmail.com)",
   "license": "MIT",
   "dependencies": {
@@ -53,10 +44,13 @@
     "dotenv": "^16.4.7",
     "figlet": "^1.11.4",
     "gradient-string": "^3.0.0",
+    "ignore": "^7.0.6",
     "ioredis": "^5.11.1",
     "ora": "^8.2.0",
     "picocolors": "^1.1.1",
     "semver": "^7.8.5",
+    "tree-sitter-wasms": "^0.1.13",
+    "web-tree-sitter": "^0.26.11",
     "zod": "^3.24.2"
   },
   "devDependencies": {

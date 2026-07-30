@@ -10,7 +10,9 @@ export interface AgentHandler<TState = unknown, TResult = unknown> {
 export class AgentHandlerRegistry {
   private readonly handlers = new Map<string, AgentHandler<any, any>>();
 
-  private key(id: string, version: string) { return `${id}@${version}`; }
+  private key(id: string, version: string) {
+    return `${id}@${version}`;
+  }
 
   register(id: string, version: string, handler: AgentHandler<any, any>): void {
     const k = this.key(id, version);
@@ -18,7 +20,10 @@ export class AgentHandlerRegistry {
     this.handlers.set(k, handler);
   }
 
-  get<TState = unknown, TResult = unknown>(id: string, version: string): AgentHandler<TState, TResult> {
+  get<TState = unknown, TResult = unknown>(
+    id: string,
+    version: string,
+  ): AgentHandler<TState, TResult> {
     const h = this.handlers.get(this.key(id, version));
     if (!h) throw new Error(`No handler for "${id}@${version}".`);
     return h as AgentHandler<TState, TResult>;

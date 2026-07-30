@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { AgentRegistry } from "../../../src/agents/registry/agent_registry.js";
+import { beforeEach, describe, expect, it } from "vitest";
 import { AgentDependencyResolver } from "../../../src/agents/dependency/resolver.js";
 import { AgentCategory } from "../../../src/agents/domain/agent_definition.js";
 import type { AgentDefinition } from "../../../src/agents/domain/agent_definition.js";
+import { AgentRegistry } from "../../../src/agents/registry/agent_registry.js";
 
 describe("AgentDependencyResolver", () => {
   let registry: AgentRegistry;
@@ -17,9 +17,7 @@ describe("AgentDependencyResolver", () => {
     status: "stable",
     capabilities: [],
     allowedTools: [],
-    dependencies: [
-      { agentId: "agent_b", versionRange: "^1.0.0" },
-    ],
+    dependencies: [{ agentId: "agent_b", versionRange: "^1.0.0" }],
     runtime: {},
   };
 
@@ -32,9 +30,7 @@ describe("AgentDependencyResolver", () => {
     status: "stable",
     capabilities: [],
     allowedTools: [],
-    dependencies: [
-      { agentId: "agent_c", versionRange: ">=1.0.0" },
-    ],
+    dependencies: [{ agentId: "agent_c", versionRange: ">=1.0.0" }],
     runtime: {},
   };
 
@@ -97,11 +93,7 @@ describe("AgentDependencyResolver", () => {
     registry.register(agentC);
 
     const plan = resolver.resolve("agent_a", "1.0.0");
-    expect(plan.levels).toEqual([
-      ["agent_c@1.0.1"],
-      ["agent_b@1.2.0"],
-      ["agent_a@1.0.0"],
-    ]);
+    expect(plan.levels).toEqual([["agent_c@1.0.1"], ["agent_b@1.2.0"], ["agent_a@1.0.0"]]);
   });
 
   it("should snapshot the exact resolved version mappings", () => {

@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { analyzeCommand } from "../../src/cli/analyze.js";
-import { agentRuntime } from "../../src/agents/runtime/instance.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentOutcome } from "../../src/agents/core/agent_result.js";
+import { agentRuntime } from "../../src/agents/runtime/instance.js";
+import { analyzeCommand } from "../../src/cli/analyze.js";
 
 vi.mock("../../src/agents/runtime/instance.js", () => ({
   agentRuntime: {

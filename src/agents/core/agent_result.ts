@@ -1,8 +1,8 @@
 export enum AgentOutcome {
   SUCCESS = "success",
-  PARTIAL = "partial",   // completed with partial results
-  RETRY = "retry",       // agent requests retry (not an error)
-  BLOCKED = "blocked",   // agent cannot proceed (missing creds, permissions)
+  PARTIAL = "partial", // completed with partial results
+  RETRY = "retry", // agent requests retry (not an error)
+  BLOCKED = "blocked", // agent cannot proceed (missing creds, permissions)
   CANCELLED = "cancelled",
   FAILED = "failed",
 }

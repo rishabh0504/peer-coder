@@ -2,6 +2,7 @@ import * as prompts from "@clack/prompts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { printBrandBanner } from "../../src/cli/brand.js";
 import { infoCommand } from "../../src/cli/info.js";
+import { orchestrateCommand } from "../../src/cli/orchestrate.js";
 import { startRepl } from "../../src/cli/repl.js";
 import { loadEnv } from "../../src/core/config/env.js";
 import { CLIError } from "../../src/core/utils/errors.js";
@@ -18,6 +19,10 @@ vi.mock("@clack/prompts", () => ({
 
 vi.mock("../../src/integration/llms/interact.js", () => ({
   interact: vi.fn(),
+}));
+
+vi.mock("../../src/cli/orchestrate.js", () => ({
+  orchestrateCommand: vi.fn(),
 }));
 
 describe("Environment Loader", () => {
@@ -64,8 +69,8 @@ describe("CLI Module Suite (brand, info, repl)", () => {
     // 1. "/help"
     // 2. "/info"
     // 3. "/clear"
-    // 4. "valid prompt" (interact succeeds)
-    // 5. "error prompt" (interact fails)
+    // 4. "valid prompt" (orchestrate succeeds)
+    // 5. "error prompt" (orchestrate fails)
     // 6. "/exit" (loops terminate)
     const inputs = ["/help", "/info", "/clear", "build something", "cause error", "/exit"];
     let inputIndex = 0;
@@ -79,7 +84,7 @@ describe("CLI Module Suite (brand, info, repl)", () => {
       return inputs[inputIndex++];
     }) as any);
 
-    vi.mocked(interact).mockImplementation(async (cmd) => {
+    vi.mocked(orchestrateCommand).mockImplementation(async (_path, cmd) => {
       if (cmd === "cause error") {
         throw new Error("REPL string error");
       }
@@ -92,7 +97,8 @@ describe("CLI Module Suite (brand, info, repl)", () => {
     expect(prompts.note).toHaveBeenCalled();
     expect(prompts.outro).toHaveBeenCalled();
     expect(clearSpy).toHaveBeenCalled();
-    expect(interact).toHaveBeenCalledTimes(2);
+    expect(orchestrateCommand).toHaveBeenCalledTimes(2);
+    expect(interact).not.toHaveBeenCalled();
 
     consoleSpy.mockRestore();
     clearSpy.mockRestore();
