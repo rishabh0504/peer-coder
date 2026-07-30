@@ -4,91 +4,67 @@ import { defaultToolRuntime } from "@runtime/tool_runtime.js";
 import { ToolExecutionError } from "@utils/errors.js";
 import type { WorkspaceContext } from "@workspace/workspace_context.js";
 import { z } from "zod";
+import { WebToolError } from "./errors/web.errors.js";
+import { parseDuckDuckGoHtml } from "./parser/duckduckgo.parser.js";
 
 export const webSearchInputSchema = z.object({
-  query: z.string().describe("Search query for web search"),
+  query: z
+    .string()
+    .min(2, "Query must be at least 2 characters")
+    .max(500, "Query cannot exceed 500 characters")
+    .describe("Search query for web search"),
   maxResults: z
     .number()
+    .int()
+    .min(1, "maxResults must be at least 1")
+    .max(20, "maxResults cannot exceed 20")
     .optional()
     .default(5)
     .describe("Maximum number of search results to return"),
 });
 
-export interface SearchResultItem {
-  title: string;
-  url: string;
-  snippet: string;
-}
-
-/**
- * Perform zero-API-key web search via DuckDuckGo HTML endpoint.
- */
-export async function searchDuckDuckGo(query: string, maxResults = 5): Promise<SearchResultItem[]> {
+export async function searchDuckDuckGo(query: string, maxResults = 5): Promise<any> {
   const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-      Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.9",
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-  if (!response.ok) {
-    throw new Error(`DuckDuckGo search HTTP request failed with status ${response.status}`);
-  }
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+      },
+    });
 
-  const html = await response.text();
-  const results: SearchResultItem[] = [];
+    clearTimeout(timeoutId);
 
-  const resultTitleRegex = /<a class="result__a"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/g;
-
-  // Extract titles & URLs
-  const titleMatches: Array<{ title: string; url: string }> = [];
-  let titleMatch = resultTitleRegex.exec(html);
-  while (titleMatch !== null) {
-    const rawUrl = titleMatch[1] || "";
-    let cleanUrl = rawUrl;
-    if (rawUrl.includes("uddg=")) {
-      const parsedUrlParam = new URLSearchParams(rawUrl.split("?")[1]).get("uddg");
-      if (parsedUrlParam) cleanUrl = decodeURIComponent(parsedUrlParam);
+    if (!response.ok) {
+      throw new WebToolError(
+        "SEARCH_PROVIDER_ERROR",
+        `DuckDuckGo search HTTP request failed with status ${response.status}`,
+        response.status,
+      );
     }
-    const cleanTitle = (titleMatch[2] || "")
-      .replace(/<[^>]+>/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
 
-    if (cleanUrl && cleanTitle) {
-      titleMatches.push({ title: cleanTitle, url: cleanUrl });
+    const html = await response.text();
+    const results = parseDuckDuckGoHtml(html);
+    return results.slice(0, maxResults);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err instanceof WebToolError) {
+      throw err;
     }
-    titleMatch = resultTitleRegex.exec(html);
-  }
-
-  // Extract snippets
-  const snippetMatches: string[] = [];
-  const snippetRegex = /<a class="result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/g;
-  let snippetMatch = snippetRegex.exec(html);
-  while (snippetMatch !== null) {
-    const cleanSnippet = (snippetMatch[1] || "")
-      .replace(/<[^>]+>/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-    snippetMatches.push(cleanSnippet);
-    snippetMatch = snippetRegex.exec(html);
-  }
-
-  for (let i = 0; i < Math.min(titleMatches.length, maxResults); i++) {
-    const titleObj = titleMatches[i];
-    if (titleObj) {
-      results.push({
-        title: titleObj.title,
-        url: titleObj.url,
-        snippet: snippetMatches[i] || "",
-      });
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new WebToolError("SEARCH_TIMEOUT", "DuckDuckGo search request timed out.");
     }
+    throw new WebToolError(
+      "SEARCH_PROVIDER_ERROR",
+      `DuckDuckGo search failed: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
-
-  return results;
 }
 
 export const webSearchTool = tool(

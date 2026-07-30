@@ -16,6 +16,7 @@ import { findReferencesTool } from "@tools/search-indexing/find_references.js";
 import { findSymbolTool } from "@tools/search-indexing/find_symbol.js";
 import { searchCodeTool } from "@tools/search-indexing/search_code.js";
 
+import { fetchWebpageTool } from "@tools/web-search/fetch_webpage.js";
 import { webSearchTool } from "@tools/web-search/web_search.js";
 import { workspaceInfoTool } from "@tools/workspace/workspace_info.js";
 
@@ -69,7 +70,10 @@ describe("Tool Wrapper Error Throw Paths Coverage", () => {
       "Mocked runtime failure",
     );
 
-    await expect(webSearchTool.invoke({ query: "q" }, config)).rejects.toThrow(
+    await expect(webSearchTool.invoke({ query: "qq" }, config)).rejects.toThrow(
+      "Mocked runtime failure",
+    );
+    await expect(fetchWebpageTool.invoke({ url: "https://example.com" }, config)).rejects.toThrow(
       "Mocked runtime failure",
     );
     await expect(workspaceInfoTool.invoke({}, config)).rejects.toThrow("Mocked runtime failure");
