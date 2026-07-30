@@ -1,4 +1,5 @@
 import * as cheerio from "cheerio";
+import { WebToolError } from "../errors/web.errors.js";
 import { normalizeUrl, validateUrl } from "../security/url-validator.js";
 
 export interface SearchResultItem {
@@ -8,6 +9,17 @@ export interface SearchResultItem {
 }
 
 export function parseDuckDuckGoHtml(html: string): SearchResultItem[] {
+  if (
+    html.includes("anomaly-modal") ||
+    html.includes("anomaly.js") ||
+    html.includes("confirm this search was made by a human")
+  ) {
+    throw new WebToolError(
+      "SEARCH_PROVIDER_ERROR",
+      "DuckDuckGo search was blocked by a bot detection CAPTCHA challenge.",
+    );
+  }
+
   const $ = cheerio.load(html);
   const results: SearchResultItem[] = [];
   const processedUrls = new Set<string>();

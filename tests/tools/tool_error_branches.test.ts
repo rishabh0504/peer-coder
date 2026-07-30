@@ -20,7 +20,7 @@ import { fetchWebpageTool } from "@tools/web-search/fetch_webpage.js";
 import { webSearchTool } from "@tools/web-search/web_search.js";
 import { workspaceInfoTool } from "@tools/workspace/workspace_info.js";
 
-import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
+import { createDefaultWorkspaceContext } from "@workspace/context/workspace_context.js";
 import { describe, expect, it, vi } from "vitest";
 
 describe("Tool Wrapper Error Throw Paths Coverage", () => {

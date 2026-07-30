@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { WorkspaceContext } from "@workspace/workspace_context.js";
-import { validateFileReadSafety, validatePath } from "@workspace/workspace_guard.js";
+import type { WorkspaceContext } from "@workspace/context/workspace_context.js";
+import { validateFileReadSafety, validatePath } from "@workspace/context/workspace_guard.js";
 
 export interface ReadFileResult {
   path: string;

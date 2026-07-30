@@ -108,7 +108,7 @@ describe("Integration & Providers Unit Test Suite", () => {
       .spyOn(integrationModule, "chatStream")
       .mockResolvedValue(fakeStream as any);
 
-    const parserModule = await import("../../src/utils/tool-parser.js");
+    const parserModule = await import("../../src/core/utils/tool-parser.js");
     const parseSpy = vi.spyOn(parserModule, "parseToolCall").mockReturnValue(null);
 
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});

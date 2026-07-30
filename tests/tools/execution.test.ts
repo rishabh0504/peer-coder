@@ -1,6 +1,6 @@
 import { executeCommandTool } from "@tools/execution/execute_command.js";
 import { getCommandOutputTool } from "@tools/execution/get_command_output.js";
-import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
+import { createDefaultWorkspaceContext } from "@workspace/context/workspace_context.js";
 import { describe, expect, it } from "vitest";
 
 describe("execution Tools Suite", () => {

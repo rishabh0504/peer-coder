@@ -1,5 +1,5 @@
 import { workspaceInfoTool } from "@tools/workspace/workspace_info.js";
-import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
+import { createDefaultWorkspaceContext } from "@workspace/context/workspace_context.js";
 import { describe, expect, it } from "vitest";
 
 describe("Workspace Info Tool Suite", () => {

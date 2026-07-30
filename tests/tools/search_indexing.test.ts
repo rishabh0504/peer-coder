@@ -1,7 +1,7 @@
 import { findReferencesTool } from "@tools/search-indexing/find_references.js";
 import { findSymbolTool } from "@tools/search-indexing/find_symbol.js";
 import { searchCodeTool } from "@tools/search-indexing/search_code.js";
-import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
+import { createDefaultWorkspaceContext } from "@workspace/context/workspace_context.js";
 import { describe, expect, it } from "vitest";
 
 describe("search-indexing Tools Suite", () => {

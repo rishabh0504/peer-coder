@@ -1,40 +1,55 @@
-import * as clackPrompts from "@clack/prompts";
-import { printBrandBanner } from "@cli/brand.js";
-import { infoCommand } from "@cli/info.js";
-import { startRepl } from "@cli/repl.js";
-import { describe, expect, it, vi } from "vitest";
+import * as prompts from "@clack/prompts";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { printBrandBanner } from "../../src/cli/brand.js";
+import { infoCommand } from "../../src/cli/info.js";
+import { startRepl } from "../../src/cli/repl.js";
+import { loadEnv } from "../../src/core/config/env.js";
+import { CLIError } from "../../src/core/utils/errors.js";
+import { interact } from "../../src/integration/llms/interact.js";
 
-vi.mock("@clack/prompts", () => {
-  return {
-    intro: vi.fn(),
-    outro: vi.fn(),
-    note: vi.fn(),
-    text: vi.fn(),
-    isCancel: vi.fn().mockImplementation((val) => val === "CANCEL_TOKEN"),
-  };
-});
-
-vi.mock("../../src/integration/llms/interact.js", () => ({
-  interact: vi.fn().mockImplementation((prompt) => {
-    if (prompt === "ThrowErrorPrompt") {
-      return Promise.reject(new Error("REPL interact error"));
-    }
-    if (prompt === "ThrowStringErrorPrompt") {
-      return Promise.reject("REPL string error");
-    }
-    return Promise.resolve();
-  }),
+// Mock clack prompts and interact
+vi.mock("@clack/prompts", () => ({
+  intro: vi.fn(),
+  outro: vi.fn(),
+  note: vi.fn(),
+  isCancel: vi.fn((val) => val === "__CANCEL__"),
+  text: vi.fn(),
 }));
 
+vi.mock("../../src/integration/llms/interact.js", () => ({
+  interact: vi.fn(),
+}));
+
+describe("Environment Loader", () => {
+  it("should load environment defaults", () => {
+    const env = loadEnv();
+    expect(env.NODE_ENV).toBeDefined();
+    expect(["development", "production", "test"]).toContain(env.NODE_ENV);
+  });
+});
+
+describe("CLI Errors", () => {
+  it("should format custom CLI error", () => {
+    const err = new CLIError("Test error message", 2);
+    expect(err.message).toBe("Test error message");
+    expect(err.exitCode).toBe(2);
+    expect(err.name).toBe("CLIError");
+  });
+});
+
 describe("CLI Module Suite (brand, info, repl)", () => {
-  it("should render printBrandBanner without throwing", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("should print brand banner to stdout", () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     printBrandBanner();
     expect(consoleSpy).toHaveBeenCalled();
     consoleSpy.mockRestore();
   });
 
-  it("should render infoCommand without throwing", () => {
+  it("should output info command details to console", () => {
     const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     infoCommand();
     expect(consoleSpy).toHaveBeenCalled();
@@ -42,38 +57,62 @@ describe("CLI Module Suite (brand, info, repl)", () => {
   });
 
   it("should test startRepl commands with @clack/prompts", async () => {
-    const textMock = vi.mocked(clackPrompts.text);
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const clearSpy = vi.spyOn(console, "clear").mockImplementation(() => {});
 
-    textMock
-      .mockResolvedValueOnce("/info")
-      .mockResolvedValueOnce("/help")
-      .mockResolvedValueOnce("/clear")
-      .mockResolvedValueOnce("Explain async/await")
-      .mockResolvedValueOnce("ThrowErrorPrompt")
-      .mockResolvedValueOnce("ThrowStringErrorPrompt")
-      .mockResolvedValueOnce("CANCEL_TOKEN");
+    // Mock sequence of user inputs
+    // 1. "/help"
+    // 2. "/info"
+    // 3. "/clear"
+    // 4. "valid prompt" (interact succeeds)
+    // 5. "error prompt" (interact fails)
+    // 6. "/exit" (loops terminate)
+    const inputs = ["/help", "/info", "/clear", "build something", "cause error", "/exit"];
+    let inputIndex = 0;
+    vi.mocked(prompts.text).mockImplementation((async (options: any) => {
+      // Test validator logic
+      if (options.validate) {
+        expect(options.validate("")).toBe("Please enter a non-empty prompt or command.");
+        expect(options.validate("   ")).toBe("Please enter a non-empty prompt or command.");
+        expect(options.validate("valid")).toBeUndefined();
+      }
+      return inputs[inputIndex++];
+    }) as any);
+
+    vi.mocked(interact).mockImplementation(async (cmd) => {
+      if (cmd === "cause error") {
+        throw new Error("REPL string error");
+      }
+      return Promise.resolve();
+    });
 
     await startRepl();
 
-    expect(textMock).toHaveBeenCalled();
+    expect(prompts.intro).toHaveBeenCalled();
+    expect(prompts.note).toHaveBeenCalled();
+    expect(prompts.outro).toHaveBeenCalled();
+    expect(clearSpy).toHaveBeenCalled();
+    expect(interact).toHaveBeenCalledTimes(2);
 
-    // Verify validate function inside text options
-    const callArgs = textMock.mock.calls[0]?.[0];
-    if (callArgs?.validate) {
-      expect(callArgs.validate("")).toBe("Please enter a non-empty prompt or command.");
-      expect(callArgs.validate("   ")).toBe("Please enter a non-empty prompt or command.");
-      expect(callArgs.validate("hello")).toBeUndefined();
-    }
-
-    vi.restoreAllMocks();
+    consoleSpy.mockRestore();
+    clearSpy.mockRestore();
   });
 
   it("should exit immediately when 'exit' command is entered", async () => {
-    const textMock = vi.mocked(clackPrompts.text);
-    textMock.mockResolvedValueOnce("exit");
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.mocked(prompts.text).mockResolvedValue("exit");
 
     await startRepl();
-    expect(textMock).toHaveBeenCalledTimes(1);
-    vi.restoreAllMocks();
+    expect(prompts.outro).toHaveBeenCalledWith("Goodbye! 👋");
+    consoleSpy.mockRestore();
+  });
+
+  it("should exit immediately when REPL is cancelled by user", async () => {
+    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.mocked(prompts.text).mockResolvedValue("__CANCEL__");
+
+    await startRepl();
+    expect(prompts.outro).toHaveBeenCalledWith("Session cancelled. Goodbye! 👋");
+    consoleSpy.mockRestore();
   });
 });

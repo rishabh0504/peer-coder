@@ -43,3 +43,67 @@ Each chapter would include:
 This will likely be **80–120+ pages of Markdown** with dozens of Mermaid diagrams if done properly. That's far beyond what fits in a single chat response.
 
 Given your long-term objective of building a serious production-grade coding agent and preparing at a Staff Engineer level, I think that's the right level of detail rather than trying to compress it into one message.
+
+
+
+```mermaid
+flowchart TD
+    User([User]) --> TerminalCLI[Terminal CLI]
+    TerminalCLI --> SessionController[Session Controller]
+    SessionController --> AgentRuntime[Agent Runtime]
+    AgentRuntime --> LangGraph{LangGraph Orchestrator}
+
+    LangGraph --> EnvAnalyzer[Environment Analyzer]
+    LangGraph --> ContextEngine[Context Engine]
+    LangGraph --> MemorySystem[Memory System]
+
+    EnvAnalyzer --> CodeIntel[Code Intelligence]
+    ContextEngine --> CodeIntel
+    MemorySystem --> CodeIntel
+
+    CodeIntel --> Planner[Planner]
+    Planner --> TaskScheduler[Task Scheduler]
+
+    TaskScheduler --> Executor[Executor]
+    TaskScheduler --> ParallelWorkers[Parallel Workers]
+
+    Executor --> ChangeManager[Change Manager]
+    ParallelWorkers --> ChangeManager
+
+    ChangeManager --> PolicyEngine[Policy Engine]
+    PolicyEngine --> ToolRuntime[Tool Runtime]
+
+    subgraph Tools [Available Subsystems]
+        direction LR
+        Filesystem["Filesystem<br>(AST/LSP/Tests)"]
+        Terminal["Terminal<br>(Docker/MCP)"]
+        Git["Git<br>(Browser/Search)"]
+    end
+
+    ToolRuntime --> Filesystem
+    ToolRuntime --> Terminal
+    ToolRuntime --> Git
+
+    Filesystem --> ValidationPipeline[Validation Pipeline]
+    Terminal --> ValidationPipeline
+    Git --> ValidationPipeline
+
+    ValidationPipeline --> ReflectionLoop[Reflection Loop]
+    ReflectionLoop --> ApprovalGate{Approval Gate}
+    ApprovalGate -- Approved --> Done([Done])
+    ApprovalGate -- Needs Fixes --> ReflectionLoop
+```
+
+
+
+
+
+I would freeze the cognitive layer at these seven roles:
+
+Orchestrator Agent
+Environment Analyzer Agent
+Code Analysis Agent
+Planning Agent
+Implementation Agent
+Validation Agent
+Reflection Agent

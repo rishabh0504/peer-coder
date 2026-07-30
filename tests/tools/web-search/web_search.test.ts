@@ -1,4 +1,4 @@
-import { createDefaultWorkspaceContext } from "@workspace/workspace_context.js";
+import { createDefaultWorkspaceContext } from "@workspace/context/workspace_context.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { searchDuckDuckGo, webSearchTool } from "../../../src/tools/web-search/web_search.js";
 

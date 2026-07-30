@@ -4,8 +4,8 @@ import type { RunnableConfig } from "@langchain/core/runnables";
 import { tool } from "@langchain/core/tools";
 import { defaultToolRuntime } from "@runtime/tool_runtime.js";
 import { ToolExecutionError } from "@utils/errors.js";
-import type { WorkspaceContext } from "@workspace/workspace_context.js";
-import { validatePath } from "@workspace/workspace_guard.js";
+import type { WorkspaceContext } from "@workspace/context/workspace_context.js";
+import { validatePath } from "@workspace/context/workspace_guard.js";
 import { z } from "zod";
 
 const execAsync = promisify(exec);
