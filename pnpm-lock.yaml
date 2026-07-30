@@ -59,6 +59,9 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
+      semver:
+        specifier: ^7.8.5
+        version: 7.8.5
       zod:
         specifier: ^3.24.2
         version: 3.25.76
@@ -75,6 +78,9 @@ importers:
       '@types/node':
         specifier: ^22.13.4
         version: 22.20.1
+      '@types/semver':
+        specifier: ^7.7.1
+        version: 7.7.1
       '@vitest/coverage-v8':
         specifier: 3.2.7
         version: 3.2.7(vitest@3.2.7(@types/node@22.20.1)(jiti@2.6.1)(yaml@2.9.0))
@@ -821,6 +827,9 @@ packages:
 
   '@types/node@22.20.1':
     resolution: {integrity: sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==}
+
+  '@types/semver@7.7.1':
+    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
 
   '@types/tinycolor2@1.4.6':
     resolution: {integrity: sha512-iEN8J0BoMnsWBqjVbWH/c0G0Hh7O21lpR2/+PrvAVgWdzL7eexIFm4JN/Wn10PTcmNdtS6U67r499mlWMXOxNw==}
@@ -2658,6 +2667,8 @@ snapshots:
   '@types/node@22.20.1':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/semver@7.7.1': {}
 
   '@types/tinycolor2@1.4.6': {}
 

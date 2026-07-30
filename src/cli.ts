@@ -1,5 +1,6 @@
 import { infoCommand } from "@cli/info.js";
 import { startRepl } from "@cli/repl.js";
+import { analyzeCommand } from "@cli/analyze.js";
 import { handleError } from "@utils/errors.js";
 import { logger } from "@utils/logger.js";
 import { Command } from "commander";
@@ -14,6 +15,19 @@ program
   .action(() => {
     try {
       infoCommand();
+    } catch (err) {
+      handleError(err);
+    }
+  });
+
+program
+  .command("analyze")
+  .description("Analyze tech stack of a workspace")
+  .option("-p, --path <dir>", "Target workspace path", process.cwd())
+  .option("-s, --summary", "Generate LLM summary via Ollama", false)
+  .action(async (opts) => {
+    try {
+      await analyzeCommand(opts.path, opts.summary);
     } catch (err) {
       handleError(err);
     }

@@ -4,6 +4,7 @@ import { printBrandBanner } from "@cli/brand.js";
 import { infoCommand } from "@cli/info.js";
 import { logger } from "@utils/logger.js";
 import picocolors from "picocolors";
+import { analyzeCommand } from "./analyze.js";
 
 export async function startRepl(): Promise<void> {
   printBrandBanner();
@@ -47,11 +48,18 @@ export async function startRepl(): Promise<void> {
       continue;
     }
 
+    if (command.startsWith("/analyze")) {
+      const withSummary = command.includes("--summary");
+      await analyzeCommand(process.cwd(), withSummary);
+      continue;
+    }
+
     if (command === "/help" || command === "help") {
       note(
-        `${picocolors.cyan("/info")}   - System & environment diagnostics\n` +
-          `${picocolors.cyan("/clear")}  - Clear screen\n` +
-          `${picocolors.cyan("/exit")}   - Exit session`,
+        `${picocolors.cyan("/analyze")} [-s, --summary] - Analyze target directory\n` +
+          `${picocolors.cyan("/info")}                 - System & environment diagnostics\n` +
+          `${picocolors.cyan("/clear")}                - Clear screen\n` +
+          `${picocolors.cyan("/exit")}                 - Exit session`,
         "Available Commands",
       );
       continue;
